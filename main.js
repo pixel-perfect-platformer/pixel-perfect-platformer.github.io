@@ -987,7 +987,7 @@ function getEditorToolButtonAtPos(x, y) {
 
 function drawBlocks(ctx) {
     // Draw gray bottom bar
-    const barHeight = State.editorMode ? 100 : 50;
+    const barHeight = 100;
     canvas.ctx.fillStyle = '#808080';
     canvas.ctx.fillRect(0, Constants.SCREEN_HEIGHT - barHeight - 40, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);
 
@@ -1840,8 +1840,9 @@ function removeStartBlocks() {
 }
 
 function positionPlayerOnSpawn() {
+    const grayRectangleTop = Constants.SCREEN_HEIGHT - 140;
     player.x = 0;
-    player.y = Constants.SCREEN_HEIGHT - player.height;
+    player.y = grayRectangleTop - player.height;
     
     // Position player on top of any block at spawn
     for (let b of State.blocks) {

@@ -8,11 +8,11 @@ class Player {
         this.height = 20;
         // Start centered horizontally and standing on the ground
         this.x = Math.floor(Constants.SCREEN_WIDTH / 2) - Math.floor(this.width / 2);
-        this.y = Constants.SCREEN_HEIGHT - 90 - this.height;
+        this.y = Constants.SCREEN_HEIGHT - 150 - this.height;
         this.lateral_speed = 0.0;
         this.vertical_speed = 0.0;
         this.accel = 0.5;
-        this.friction = 0.85;
+        this.friction = 0.8;
         this.max_speed = 12;
         this.gravity = 0.8;
         this.onGround = false;
@@ -95,8 +95,9 @@ class Player {
         }
 
         // Floor collision (prevent entering gray box)
-        if (newY + this.height > Constants.SCREEN_HEIGHT - 90) {
-            newY = Constants.SCREEN_HEIGHT - 90 - this.height;
+        const grayRectangleTop = Constants.SCREEN_HEIGHT - 140;
+        if (newY + this.height > grayRectangleTop) {
+            newY = grayRectangleTop - this.height;
             this.vertical_speed = 0;
             landed = true;
         }
