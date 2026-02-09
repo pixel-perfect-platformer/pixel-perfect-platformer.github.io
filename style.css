@@ -1,0 +1,68 @@
+canvas {
+            width: 45vw;
+            height: 90vh;
+            max-width: 45vw;
+            max-height: 90vh;
+            object-fit: contain;
+            display: block;
+            border: 1px solid black;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button.pressed {
+            transform: scale(0.98) translateY(2px);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Define the animation */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: scale(1) translateX(0);
+            }
+
+            12.5% {
+                transform: scale(3) translateX(0);
+            }
+
+            25% {
+                transform: scale(0.2) translateX(0);
+            }
+
+            37.5% {
+                transform: scale(1) translateX(0);
+            }
+
+            50% {
+                transform: scale(1) translateX(-200px);
+            }
+
+            62.5% {
+                transform: scale(1) translateX(200px);
+            }
+
+            75% {
+                transform: scale(1) translateX(-200px);
+            }
+
+            87.5% {
+                transform: scale(1) translateX(200px);
+            }
+        }
+
+        /* Class to trigger the animation */
+        .animated {
+            animation: shake 1s cubic-bezier(.36, .07, .19, .97) both;
+            transition: none !important;
+        }
+
+        #startBtn.animated {
+            transition: none !important;
+        }
+        #editorBtn.animated {
+            transition: none !important;
+        }
