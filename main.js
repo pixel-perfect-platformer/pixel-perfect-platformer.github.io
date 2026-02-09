@@ -881,8 +881,11 @@ function drawCreditsScreen(ctx) {
     // Credits content
     const credits = [
         'Game Developer: Vihaan Krishnan',
-        'Music: Scott Joplin',
+        'Title Screen Music: Scott Joplin',
         'Engine: HTML5 Canvas',
+        'First player: Tejas Deepak',
+        'Inspiration: Aneerudh (Krrish) Joshi',
+
         'Thanks for playing!'
     ];
 
