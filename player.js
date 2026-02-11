@@ -19,6 +19,8 @@ class Player {
     }
 
     update() {
+        if (!State.isRunning) return true;
+        
         const wasOnGround = this.onGround;
 
         // Horizontal input affects lateral speed
@@ -64,22 +66,9 @@ class Player {
                     this.vertical_speed = 0;
                 }
             }
-            // If block is an end block, also check swept intersection between old and new positions (broad phase)
-            // end block swept check
-            if ((b.type === 'end' || b.end === true) && !State.levelCompleted) {
-                const sweepTop = Math.min(oldY, newY);
-                const sweepBottom = Math.max(oldY + this.height, newY + this.height);
-                const vertOverlap = sweepBottom >= b.y && sweepTop <= b.y + b.height;
-                const sweepLeft = Math.min(oldX, newX);
-                const sweepRight = Math.max(oldX + this.width, newX + this.width);
-                const horizOverlap = (Math.min(sweepRight, b.x + b.width) >= Math.max(sweepLeft, b.x));
-                if (vertOverlap && horizOverlap) {
-                    State.levelCompleted = true;
-                    State.onLevelComplete();
-                }
-            }
+
             // kill block swept check (player dies)
-            if ((b.type === 'kill' || b.kill === true)) {
+            if (b.type === 'kill' || b.kill === true) {
                 const sweepTopK = Math.min(oldY, newY);
                 const sweepBottomK = Math.max(oldY + this.height, newY + this.height);
                 const vertOverlapK = sweepBottomK >= b.y && sweepTopK <= b.y + b.height;
@@ -87,11 +76,27 @@ class Player {
                 const sweepRightK = Math.max(oldX + this.width, newX + this.width);
                 const horizOverlapK = (Math.min(sweepRightK, b.x + b.width) >= Math.max(sweepLeftK, b.x));
                 if (vertOverlapK && horizOverlapK) {
-                    State.onPlayerKilled();
+                    State.isRunning = false;
+                    State.deathAnimationStartTime = Date.now();
+                    State.deathTime = State.levelStartTime > 0 ? ((Date.now() - State.levelStartTime) / 1000).toFixed(2) : 0;
                 }
             }
-            // Start can only be on ground
-
+            // end block check
+            else if ((b.type === 'end' || b.end === true) && !State.levelCompleted) {
+                const sweepTopE = Math.min(oldY, newY);
+                const sweepBottomE = Math.max(oldY + this.height, newY + this.height);
+                const vertOverlapE = sweepBottomE >= b.y && sweepTopE <= b.y + b.height;
+                const sweepLeftE = Math.min(oldX, newX);
+                const sweepRightE = Math.max(oldX + this.width, newX + this.width);
+                const horizOverlapE = (Math.min(sweepRightE, b.x + b.width) >= Math.max(sweepLeftE, b.x));
+                if (vertOverlapE && horizOverlapE) {
+                    State.levelCompleted = true;
+                    State.isRunning = false;
+                    State.completionAnimationStartTime = Date.now();
+                    State.completionTime = State.levelStartTime > 0 ? ((Date.now() - State.levelStartTime) / 1000).toFixed(2) : 0;
+                    return true;
+                }
+            }
         }
 
         // Floor collision (prevent entering gray box)
@@ -119,6 +124,7 @@ class Player {
             this.vertical_speed = -10;
             Input.jumpUsed = true;
             this.onGround = false;
+            State.jumpCount++;
         }
 
         // Apply friction: reduce lateral speed when no input
@@ -145,6 +151,124 @@ class Player {
     }
 
     draw(ctx) {
+        // Death animation
+        if (State.deathAnimationStartTime > 0 && !State.showDeathScreen) {
+            const elapsed = Date.now() - State.deathAnimationStartTime;
+            const progress = Math.min(elapsed / State.deathAnimationDuration, 1);
+            
+            // Scale down and fade out
+            const scale = 1 - progress;
+            const alpha = 1 - progress;
+            
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+            ctx.scale(scale, scale);
+            ctx.translate(-(this.x + this.width / 2), -(this.y + this.height / 2));
+            
+            // Draw outer color (border)
+            ctx.fillStyle = State.currentPlayerOuterColor;
+            if (State.currentPlayerIcon === 'circle') {
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (State.currentPlayerIcon === 'triangle') {
+                ctx.beginPath();;
+                ctx.moveTo(this.x + this.width / 2, this.y);
+                ctx.lineTo(this.x, this.y + this.height);
+                ctx.lineTo(this.x + this.width, this.y + this.height);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            // Draw inner color
+            ctx.fillStyle = State.currentPlayerColor;
+            const inset = 3;
+            if (State.currentPlayerIcon === 'circle') {
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2 - inset, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (State.currentPlayerIcon === 'triangle') {
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width / 2, this.y + inset);
+                ctx.lineTo(this.x + inset, this.y + this.height - inset);
+                ctx.lineTo(this.x + this.width - inset, this.y + this.height - inset);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                ctx.fillRect(this.x + inset, this.y + inset, this.width - inset * 2, this.height - inset * 2);
+            }
+            
+            ctx.restore();
+            
+            // Show death screen after animation completes
+            if (progress >= 1) {
+                State.showDeathScreen = true;
+            }
+            return;
+        }
+        
+        // Completion animation
+        if (State.completionAnimationStartTime > 0 && !State.showCompletionScreen) {
+            const elapsed = Date.now() - State.completionAnimationStartTime;
+            const progress = Math.min(elapsed / State.deathAnimationDuration, 1);
+            
+            // Scale up and fade out
+            const scale = 1 + progress;
+            const alpha = 1 - progress;
+            
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+            ctx.scale(scale, scale);
+            ctx.translate(-(this.x + this.width / 2), -(this.y + this.height / 2));
+            
+            // Draw outer color (border)
+            ctx.fillStyle = State.currentPlayerOuterColor;
+            if (State.currentPlayerIcon === 'circle') {
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (State.currentPlayerIcon === 'triangle') {
+                ctx.beginPath();;
+                ctx.moveTo(this.x + this.width / 2, this.y);
+                ctx.lineTo(this.x, this.y + this.height);
+                ctx.lineTo(this.x + this.width, this.y + this.height);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            // Draw inner color
+            ctx.fillStyle = State.currentPlayerColor;
+            const inset = 3;
+            if (State.currentPlayerIcon === 'circle') {
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2 - inset, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (State.currentPlayerIcon === 'triangle') {
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width / 2, this.y + inset);
+                ctx.lineTo(this.x + inset, this.y + this.height - inset);
+                ctx.lineTo(this.x + this.width - inset, this.y + this.height - inset);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                ctx.fillRect(this.x + inset, this.y + inset, this.width - inset * 2, this.height - inset * 2);
+            }
+            
+            ctx.restore();
+            
+            // Show completion screen after animation completes
+            if (progress >= 1) {
+                State.showCompletionScreen = true;
+            }
+            return;
+        }
+        
         // Draw outer color (border)
         ctx.fillStyle = State.currentPlayerOuterColor;
         if (State.currentPlayerIcon === 'circle') {

@@ -186,6 +186,7 @@ window.addEventListener('popstate', (e) => {
 
 
 let player = null;
+let endBlockCheckCounter = 0;
 
 
 function gameLoop(time) {
@@ -199,6 +200,7 @@ function gameLoop(time) {
     // Show/hide title controls
     const titleControls = document.getElementById('titleControls');
     if (titleControls) titleControls.style.display = State.showTitleScreen ? 'block' : 'none';
+    
     if (State.showTitleScreen) {
         drawTitleScreen(canvas.ctx);
         requestAnimationFrame(gameLoop);
@@ -211,6 +213,14 @@ function gameLoop(time) {
         drawCreditsScreen(canvas.ctx);
         requestAnimationFrame(gameLoop);
         return;
+    } else if (State.showCompletionScreen) {
+        drawCompletionScreen(canvas.ctx);
+        requestAnimationFrame(gameLoop);
+        return;
+    } else if (State.showDeathScreen) {
+        drawDeathScreen(canvas.ctx);
+        requestAnimationFrame(gameLoop);
+        return;
     }
     
     updateEditorUI();
@@ -220,25 +230,17 @@ function gameLoop(time) {
         // Player exists and is active only when NOT in editor mode
         if (!State.editorMode) {
             if (State.isRunning) {
+                // Start timer on first update
+                if (State.levelStartTime === 0) {
+                    State.levelStartTime = Date.now();
+                }
                 player.update();
             }
+            // Always draw player (including during death animation)
             player.draw(canvas.ctx);
         }
 
-        // Frame-level check for touching an end block (robust against missed checks)
-        if (State.isRunning && !State.levelCompleted) {
-            for (let b of State.blocks) {
-                if ((b.type === 'end' || b.end === true) && player.x <= b.x + b.width && player.x + player.width >= b.x && player.y <= b.y + b.height && player.y + player.height >= b.y) {
-                    State.levelCompleted = true;
-                    onLevelComplete();
-                    break;
-                }
-                if ((b.type === 'kill' || b.kill === true) && player.x <= b.x + b.width && player.x + player.width >= b.x && player.y <= b.y + b.height && player.y + player.height >= b.y) {
-                    onPlayerKilled();
-                    break;
-                }
-            }
-        }
+
 
     // Draw editor HUD
     drawHUD(canvas.ctx);
@@ -701,11 +703,6 @@ function drawTitleScreen(ctx) {
         canvas.ctx.drawImage(githubLogo, issuesX - iconSize/2, issuesY - iconSize/2, iconSize, iconSize);
     }
 
-    // Music credit
-    canvas.ctx.fillStyle = '#ecf0f1';
-    canvas.ctx.font = '10px Arial';
-    canvas.ctx.fillText('Music: Scott Joplin / IE', Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT - 10);
-
     canvas.ctx.globalAlpha = 1; // reset
 }
 
@@ -881,11 +878,12 @@ function drawCreditsScreen(ctx) {
     // Credits content
     const credits = [
         'Game Developer: Vihaan Krishnan',
-        'Title Screen Music: Scott Joplin',
+        'Title Screen Composer: Scott Joplin',
+        'Title Screen Performer: IE',
         'Engine: HTML5 Canvas',
         'First player: Tejas Deepak',
-        'Inspiration: Aneerudh (Krrish) Joshi',
-
+        'Inspiration: Aneerudh (Krrish) Joshi, GD',
+        'Contributors: Aneerudh (Krrish) Joshi',
         'Thanks for playing!'
     ];
 
@@ -899,6 +897,61 @@ function drawCreditsScreen(ctx) {
     });
 
     canvas.ctx.globalAlpha = 1;
+}
+
+function drawCompletionScreen(ctx) {
+    // Draw blocks in background
+    drawBlocks(canvas.ctx);
+    
+    // Semi-transparent overlay
+    canvas.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    canvas.ctx.fillRect(0, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);
+    
+    // Completion message
+    canvas.ctx.fillStyle = '#00ff00';
+    canvas.ctx.font = 'bold 32px Arial';
+    canvas.ctx.textAlign = 'center';
+    canvas.ctx.fillText('You have completed the level', Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 - 60);
+    
+    // Stats
+    canvas.ctx.fillStyle = '#ffffff';
+    canvas.ctx.font = '20px Arial';
+    canvas.ctx.fillText(`Jumps: ${State.jumpCount}`, Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 - 10);
+    canvas.ctx.fillText(`Time: ${State.completionTime}s`, Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 + 20);
+    
+    // Continue hint
+    canvas.ctx.fillStyle = '#aaaaaa';
+    canvas.ctx.font = '16px Arial';
+    canvas.ctx.fillText('Click to continue', Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 + 60);
+}
+
+function drawDeathScreen(ctx) {
+    // Draw blocks in background
+    drawBlocks(canvas.ctx);
+    
+    // Draw back arrow
+    animateBackArrow(ctx, { value: State.isAnimatingBack }, { value: State.animationStartTimeBack });
+    
+    // Semi-transparent overlay
+    canvas.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    canvas.ctx.fillRect(0, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);
+    
+    // Death message
+    canvas.ctx.fillStyle = '#ff0000';
+    canvas.ctx.font = 'bold 32px Arial';
+    canvas.ctx.textAlign = 'center';
+    canvas.ctx.fillText('You Died', Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 - 60);
+    
+    // Stats
+    canvas.ctx.fillStyle = '#ffffff';
+    canvas.ctx.font = '20px Arial';
+    canvas.ctx.fillText(`Jumps: ${State.jumpCount}`, Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 - 10);
+    canvas.ctx.fillText(`Time: ${State.deathTime}s`, Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 + 20);
+    
+    // Try again hint
+    canvas.ctx.fillStyle = '#aaaaaa';
+    canvas.ctx.font = '16px Arial';
+    canvas.ctx.fillText('Click to try again', Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 + 60);
 }
 
 // Click detection for title screen buttons
@@ -1192,14 +1245,6 @@ function drawHUD(ctx) {
     if (!State.isRunning && !State.isAnimatingBack) {
         canvas.ctx.fillStyle = 'rgba(0,0,0,0.5)';
         canvas.ctx.fillRect(0, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);
-    }
-    if (State.levelCompleted) {
-        canvas.ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        canvas.ctx.fillRect(0, Constants.SCREEN_HEIGHT / 2 - 30, Constants.SCREEN_WIDTH, 60);
-        canvas.ctx.fillStyle = '#0f0';
-        canvas.ctx.font = '24px sans-serif';
-        canvas.ctx.fillText('You have completed the level!', 20, Constants.SCREEN_HEIGHT / 2 + 8);
-
     }
     if (State.editorMode) {
         Constants.editorHint.textContent = 'Editor: click to add/remove blocks (grid 10px)';
@@ -1543,6 +1588,36 @@ canvas.canvas.addEventListener('mouseup', (e) => {
         return;
     }
 
+    // Handle completion screen clicks
+    if (State.showCompletionScreen) {
+        // Click anywhere to restart
+        State.showCompletionScreen = false;
+        loadLevel(State.currentLevelIndex);
+        State.isRunning = true;
+        return;
+    }
+
+    // Handle death screen clicks
+    if (State.showDeathScreen) {
+        // Check back arrow first
+        if (window._isBackArrowAtPos && window._isBackArrowAtPos(p.x, p.y)) {
+            State.isAnimating = false;
+            State.isAnimatingEditor = false;
+            State.isAnimatingCustomize = false;
+            if (!State.isAnimatingBack) {
+                State.isAnimatingBack = true;
+                State.animationStartTimeBack = Date.now();
+            }
+            history.pushState({ screen: 'title' }, '', '');
+            return;
+        }
+        // Click anywhere else to restart
+        State.showDeathScreen = false;
+        loadLevel(State.currentLevelIndex);
+        State.isRunning = true;
+        return;
+    }
+
     if (State.pressedTitleButton) {
         const btn = getTitleScreenButtonAtPos(p.x, p.y);
         if (btn === State.pressedTitleButton || !btn) {
@@ -1875,6 +1950,14 @@ function loadLevel(index) {
     player.lateral_speed = player.vertical_speed = 0;
     State.isRunning = false;
     State.levelCompleted = false;
+    State.showCompletionScreen = false;
+    State.showDeathScreen = false;
+    State.levelStartTime = 0;
+    State.jumpCount = 0;
+    State.deathAnimationStartTime = 0;
+    State.deathTime = 0;
+    State.completionAnimationStartTime = 0;
+    State.completionTime = 0;
     
     if (State.levelNameInput) {
         State.levelNameInput.value = State.levels[index].name || `Level ${index + 1}`;
@@ -1945,23 +2028,15 @@ function respawnPlayer(x, y) {
 }
 
 function onPlayerKilled() {
-    const start = State.blocks.find(b => b.type === 'start');
-    if (start) {
-        respawnPlayer(
-            start.x + Math.floor((start.width - player.width) / 2),
-            start.y - player.height - 10000
-        );
-    } else {
-        respawnPlayer(
-            Math.floor(Constants.SCREEN_WIDTH / 2) - Math.floor(player.width / 2),
-            Constants.SCREEN_HEIGHT - player.height - 100
-        );
-    }
+    State.isRunning = false;
+    State.showDeathScreen = true;
 }
 
 function onLevelComplete() {
+    console.log('onLevelComplete called, levelCompleted:', State.levelCompleted);
     if (State.levelCompleted) return;
     State.levelCompleted = true;
     State.isRunning = false;
-    showStatus('You have completed the level!');
+    State.showCompletionScreen = true;
+    console.log('Completion screen set to true');
 }

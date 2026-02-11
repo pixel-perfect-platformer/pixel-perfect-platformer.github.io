@@ -19,6 +19,18 @@ class State {
     static texts = []; // placed text objects {x,y,text}
     static levelCompleted = false;
     static showHitboxes = false;
+    // Level stats
+    static levelStartTime = 0;
+    static levelCompletionTime = 0;
+    static jumpCount = 0;
+    static showCompletionScreen = false;
+    static showDeathScreen = false;
+    static completionScreenStartTime = 0;
+    static deathAnimationStartTime = 0;
+    static deathAnimationDuration = 250; // 0.25 seconds
+    static deathTime = 0;
+    static completionAnimationStartTime = 0;
+    static completionTime = 0;
     // Text dragging state
     static draggingTextIndex = -1;
     static dragging = false;
