@@ -13,6 +13,9 @@
         <button id="editorBtn" hidden>Enter Editor</button>
         <button id="clearBtn" hidden>Clear Blocks</button>
         <button id="saveBtn" hidden>Save Level</button>
+        <button id="publishBtn" hidden>Publish Level</button>
+        <button id="accountBtn" hidden>Account</button>
+        <button id="browseBtn" hidden>Browse Published</button>
         <button id="loadBtn" hidden>Load Level</button>
         <select id="levelSelect" hidden></select>
         <button id="newLevelBtn" hidden>New Level</button>
@@ -40,11 +43,73 @@
         </div>
     </div>
 
+    <!-- Level Management Menu -->
+    <div id="levelMenu" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border:2px solid #333;padding:20px;z-index:1000;max-height:400px;overflow-y:auto;width:300px;">
+        <h3>Level Manager</h3>
+        <div id="myLevels">
+            <h4>My Levels</h4>
+            <button id="newLevelMenuBtn" style="margin-bottom:10px;">+ New Level</button>
+            <div id="levelList"></div>
+        </div>
+        <hr>
+        <div>
+            <input id="searchInput" placeholder="Search published levels..." style="width:200px;">
+            <button id="searchBtn">Search</button>
+        </div>
+        <div id="searchResults"></div>
+        <button id="closeLevelMenu" style="margin-top:10px;">Close</button>
+    </div>
+
     <canvas id="game"></canvas>
+
+    <!-- Login Modal -->
+    <div id="loginModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:3000;">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:30px;border-radius:8px;max-width:350px;text-align:center;">
+            <h2 style="margin-top:0;">Sign In</h2>
+            <div id="loginForm">
+                <button id="googleSignInBtn" style="width:100%;padding:12px;margin:10px 0;background:#4285f4;color:white;border:none;border-radius:4px;font-size:16px;cursor:pointer;">Sign in with Google</button>
+            </div>
+            <div id="loggedInView" style="display:none;">
+                <p>Signed in as:<br><strong id="currentUsername"></strong></p>
+                <button id="logoutBtn" style="width:100%;padding:10px;margin-top:10px;">Sign Out</button>
+            </div>
+            <button id="closeLoginModal" style="width:100%;padding:10px;margin-top:10px;">Close</button>
+        </div>
+    </div>
+
+    <!-- Publish Modal -->
+    <div id="publishModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:2000;">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:30px;border-radius:8px;max-width:400px;">
+            <h2 style="margin-top:0;">Publish Level</h2>
+            <p>Your level will be publicly available to all players.</p>
+            <input id="authorInput" placeholder="Your name" style="width:100%;padding:8px;margin:10px 0;box-sizing:border-box;">
+            <div style="margin:15px 0;padding:10px;background:#fff3cd;border:1px solid #ffc107;border-radius:4px;">
+                <label><input type="checkbox" id="verifyCheckbox"> I verify this level is playable and appropriate</label>
+            </div>
+            <div id="verificationStatus" style="margin:15px 0;padding:10px;border-radius:4px;"></div>
+            <div style="text-align:right;">
+                <button id="cancelPublish" style="margin-right:10px;">Cancel</button>
+                <button id="confirmPublish" disabled style="padding:8px 16px;">Publish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Browse Modal -->
+    <div id="browseModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:2000;">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:30px;border-radius:8px;max-width:500px;max-height:600px;overflow-y:auto;">
+            <h2 style="margin-top:0;">Browse Published Levels</h2>
+            <input id="searchLevels" placeholder="Search..." style="width:100%;padding:8px;margin-bottom:15px;box-sizing:border-box;">
+            <div id="levelsList" style="max-height:400px;overflow-y:auto;"></div>
+            <button id="closeBrowse" style="margin-top:15px;">Close</button>
+        </div>
+    </div>
+
     <audio id="titleMusic" loop hidden>
         <source src="theme_song.ogg" type="audio/ogg">
     </audio>
+    <script type="module" src="firebase-config.js"></script>
     <script type="module" src="main.js"></script>
+
 </body>
 
 </html>

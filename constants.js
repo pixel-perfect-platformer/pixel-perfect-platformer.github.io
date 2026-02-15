@@ -16,6 +16,7 @@ class Constants {
     static editorBtn = document.getElementById('editorBtn');
     static clearBtn = document.getElementById('clearBtn');
     static saveBtn = document.getElementById('saveBtn');
+    static publishBtn = document.getElementById('publishBtn');
     static loadBtn = document.getElementById('loadBtn');
     static levelSelect = document.getElementById('levelSelect');
     static newLevelBtn = document.getElementById('newLevelBtn');
