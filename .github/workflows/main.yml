@@ -3,7 +3,7 @@ on:
   push:
     branches: [ main ]
 
-# WEB + ZIP (Always works)
+# WEB/HTML5 (Always works - your current setup)
 jobs:
   web:
     runs-on: ubuntu-latest
@@ -21,59 +21,14 @@ jobs:
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
-    - name: Create HTML5 ZIP download
+    - name: Create HTML5 ZIP
       run: |
         zip -r pixel-perfect-html.zip .
         ./butler push pixel-perfect-html.zip krisvih32alt/pixel-perfect-platformer:html-zip --userversion ${{ github.sha }}
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
-  # WINDOWS NATIVE (Tauri/Electron)
-  windows:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 20
-    - name: Install Windows butler
-      run: |
-        curl.exe -L -o butler.zip https://broth.itch.zone/butler/windows-amd64/LATEST/archive/default
-        tar -xf butler.zip
-    - name: Build Tauri Windows
-      run: |
-        npm install
-        npm run tauri build -- --target x86_64-pc-windows-msvc
-        Compress-Archive -Path src-tauri/target/release/* -DestinationPath pixel-perfect-windows.zip
-    - name: Upload Windows
-      run: .\butler.exe push pixel-perfect-windows.zip krisvih32alt/pixel-perfect-platformer:windows --userversion ${{ github.sha }}
-      env:
-        BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
-
-  # MAC NATIVE  
-  mac:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 20
-    - name: Install Mac butler
-      run: |
-        curl -L -o butler.zip https://broth.itch.zone/butler/darwin-aarch64/LATEST/archive/default
-        unzip butler.zip
-        chmod +x butler
-    - name: Build Tauri Mac
-      run: |
-        npm install
-        npm run tauri build -- --target universal-apple-darwin
-        zip -r pixel-perfect-mac.zip src-tauri/target/release/
-    - name: Upload Mac
-      run: ./butler push pixel-perfect-mac.zip krisvih32alt/pixel-perfect-platformer:mac --userversion ${{ github.sha }}
-      env:
-        BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
-
-  # LINUX NATIVE
+# LINUX NATIVE (Fixed deps + correct paths)
   linux:
     runs-on: ubuntu-latest
     steps:
@@ -82,20 +37,112 @@ jobs:
       with:
         node-version: 20
     - uses: dtolnay/rust-toolchain@stable
-    - name: Install Linux deps
+    
+    - name: Install Linux deps **FIXED**
       run: |
         sudo apt-get update
-        sudo apt-get install -y libwebkit2gtk-4.0-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev build-essential
+        sudo apt-get install -y \
+          libwebkit2gtk-4.0-dev \
+          libgtk-3-dev \
+          libayatana-appindicator3-dev \
+          librsvg2-dev \
+          libgdk-pixbuf2.0-dev \
+          libjavascriptcoregtk-4.1-dev \
+          build-essential \
+          pkg-config \
+          libssl-dev \
+          patchelf
+
+    - name: Install Rust deps
+      run: rustup target add x86_64-unknown-linux-gnu
+
     - name: Install npm deps & build
-      run: npm install && npm run tauri build
+      run: npm install && npm run tauri build -- --target x86_64-unknown-linux-gnu
+
     - name: Install butler
       run: |
         curl -L -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
         unzip butler.zip
         chmod +x butler
-    - name: Upload Linux
+
+    - name: Package Linux **FIXED PATH**
       run: |
-        zip -r pixel-perfect-linux.zip src-tauri/target/release/
+        find src-tauri/target/release -name "*.AppImage" -o -name "tauri-app" -o -name "*.exe" | head -1 | xargs -I {} zip -r pixel-perfect-linux.zip {}
         ./butler push pixel-perfect-linux.zip krisvih32alt/pixel-perfect-platformer:linux --userversion ${{ github.sha }}
+      env:
+        BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
+
+# WINDOWS NATIVE (Fixed zip path)
+  windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - uses: dtolnay/rust-toolchain@stable
+
+    - name: Install Windows Rust target
+      shell: pwsh
+      run: rustup target add x86_64-pc-windows-msvc
+
+    - name: Install npm deps & build **FIXED**
+      shell: pwsh
+      run: |
+        npm install
+        npm run tauri build
+
+    - name: Install butler
+      shell: pwsh
+      run: |
+        Invoke-WebRequest -Uri https://broth.itch.zone/butler/windows-amd64/LATEST/archive/default -OutFile butler.zip
+        Expand-Archive butler.zip
+        .\butler.exe version
+
+    - name: Package Windows **CORRECT PATH**
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem -Path "src-tauri\target\release" -Filter "*.exe" | Select-Object -First 1
+        if ($exe) {
+          Compress-Archive -Path $exe.FullName -DestinationPath pixel-perfect-windows.zip
+        } else {
+          Write-Error "No .exe found in src-tauri/target/release/"
+          exit 1
+        }
+
+    - name: Upload Windows
+      shell: pwsh
+      run: .\butler.exe push pixel-perfect-windows.zip krisvih32alt/pixel-perfect-platformer:windows --userversion ${{ github.sha }}
+      env:
+        BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
+
+# MAC NATIVE (Fixed butler download)
+  mac:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - uses: dtolnay/rust-toolchain@stable
+
+    - name: Install npm deps & build
+      run: |
+        npm install
+        npm run tauri build
+
+    - name: Install butler **FIXED URL**
+      run: |
+        curl -L https://broth.itch.zone/butler/darwin-aarch64/LATEST/archive/default -o butler.zip
+        unzip butler.zip
+        chmod +x butler
+
+    - name: Package Mac **CORRECT PATH**
+      run: |
+        find src-tauri/target/release -name "*.app" | head -1 | xargs -I {} zip -r pixel-perfect-mac.zip {}
+        ls -la pixel-perfect-mac.zip
+
+    - name: Upload Mac
+      run: ./butler push pixel-perfect-mac.zip krisvih32alt/pixel-perfect-platformer:mac --userversion ${{ github.sha }}
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
