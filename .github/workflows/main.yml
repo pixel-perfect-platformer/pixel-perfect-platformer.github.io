@@ -16,14 +16,17 @@ jobs:
             target: x86_64-unknown-linux-gnu
             channel: linux
             zipname: pixel-perfect-platformer-linux.zip
-          - os: windows-latest  
+            butler: linux-amd64LATEST
+          - os: windows-latest
             target: x86_64-pc-windows-msvc
             channel: windows
             zipname: pixel-perfect-platformer-windows.zip
+            butler: windows-amd64LATEST
           - os: macos-latest
             target: aarch64-apple-darwin
             channel: mac
             zipname: pixel-perfect-platformer-macos.zip
+            butler: darwin-aarch64LATEST
     
     steps:
     - uses: actions/checkout@v4
@@ -59,28 +62,39 @@ jobs:
       run: npm run tauri build -- --target ${{ matrix.target }}
     
     - name: Setup Butler
+      if: matrix.os != 'windows-latest'
       run: |
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          curl -L https://broth.itch.ovh/butler/windows-amd64LATEST.zip -o butler.zip
-          powershell.exe "Expand-Archive butler.zip ./; echo '$PWD\butler.exe' >> $env:GITHUB_PATH"
-        else
-          curl -L https://broth.itch.ovh/butler/${{ (matrix.os == 'macos-latest' && 'darwin-aarch64LATEST') || 'linux-amd64LATEST' }}/zip -o butler.zip
-          unzip butler.zip && chmod +x butler && echo "$PWD/butler" >> $GITHUB_PATH
-        fi
+        curl -L https://broth.itch.ovh/butler/${{ matrix.butler }}/zip -o butler.zip
+        unzip butler.zip
+        chmod +x butler
+        echo "$PWD/butler" >> $GITHUB_PATH
     
-    - name: Package & Upload
-      shell: ${{ (matrix.os == 'windows-latest' && 'pwsh') || 'bash' }}
+    - name: Setup Butler (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
       run: |
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          $exe = Get-ChildItem "src-tauri/target/release/" -Recurse -Include "*.exe" | Select -First 1
-          Compress-Archive $exe.FullName ${{ matrix.zipname }}
-          butler.exe push ${{ matrix.zipname }} krisvih32alt/pixel-perfect-platformer:${{ matrix.channel }}
-        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+        Invoke-WebRequest -Uri "https://broth.itch.ovh/butler/${{ matrix.butler }}.zip" -OutFile "butler.zip"
+        Expand-Archive -Path "butler.zip" -DestinationPath "./" -Force
+        Write-Output "$PWD\butler.exe" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+    
+    - name: Package & Upload Linux/Mac
+      if: matrix.os != 'windows-latest'
+      run: |
+        if [ "${{ matrix.os }}" = "macos-latest" ]; then
           find src-tauri/target/release/ -name "*.app" | head -1 | xargs -I {} zip -r ${{ matrix.zipname }} {}
-          butler push ${{ matrix.zipname }} krisvih32alt/pixel-perfect-platformer:${{ matrix.channel }}
         else
           cd src-tauri/target/release/ && find . -name "*.AppImage" -o -name "pixel-perfect-platformer*" -type f | head -1 | xargs -I {} zip -r ../${{ matrix.zipname }} {}
-          butler push ${{ matrix.zipname }} krisvih32alt/pixel-perfect-platformer:${{ matrix.channel }}
         fi
+        butler push ${{ matrix.zipname }} krisvih32alt/pixel-perfect-platformer:${{ matrix.channel }}
+      env:
+        BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
+    
+    - name: Package & Upload Windows
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem "src-tauri/target/release/" -Recurse -Include "*.exe" | Select-Object -First 1
+        Compress-Archive -Path $exe.FullName -DestinationPath "${{ matrix.zipname }}" -Force
+        .\butler.exe push ${{ matrix.zipname }} krisvih32alt/pixel-perfect-platformer:${{ matrix.channel }}
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
