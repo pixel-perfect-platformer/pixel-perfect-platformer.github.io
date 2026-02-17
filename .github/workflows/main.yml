@@ -24,15 +24,15 @@ jobs:
     - name: Build web
       run: npm run build
     
-    - name: Deploy to itch.io
-      uses: joshaber/butler-push-itchio@v2.2
+    - name: Setup Butler
+      uses: manifoldco/setup-butler@v1
       with:
-        repo: krisvih32alt/pixel-perfect-platformer
-        channel: html5
-        itchioApiKey: ${{ secrets.ITCHIO_API_KEY }}
-        files: |
-          dist/**/*
-          *.zip
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Deploy HTML5 to itch.io
+      run: butler push dist krisvih32alt/pixel-perfect-platformer:html5
+      env:
+        BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
   deploy-windows:
     runs-on: windows-latest
@@ -63,9 +63,8 @@ jobs:
         $exe = Get-ChildItem "src-tauri/target/release/" -Recurse -Include "*.exe" | Select-Object -First 1
         if ($exe) { 
           Compress-Archive -Path $exe.FullName -DestinationPath "pixel-perfect-platformer-windows.zip" -Force
-          Write-Output "Zipped: $($exe.FullName)"
         } else {
-          Write-Error "No .exe found in target/release/"
+          Write-Error "No .exe found"
           exit 1
         }
     
@@ -104,7 +103,7 @@ jobs:
     
     - name: Zip macOS Release
       run: |
-        find src-tauri/target/release/ -name "*.app" -type d | head -1 | xargs -I {} zip -r pixel-perfect-platformer-macos.zip {}
+        find src-tauri/target/release/ -name "*.app" | head -1 | xargs -I {} zip -r pixel-perfect-platformer-macos.zip {}
     
     - name: Setup Butler
       uses: manifoldco/setup-butler@v1
