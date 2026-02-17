@@ -6,21 +6,22 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # Required for checkout
     steps:
-    - name: Checkout repo
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup butler
-      uses: itchio/setup-butler@v1  # Official action, no wget needed
+    - name: Install butler
+      run: |
+        curl -L -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+        unzip butler.zip
+        chmod +x butler
 
-    - name: Verify target
-      run: butler status krisvih32alt/pixel-perfect-platformer:html
+    - name: Check target exists
+      run: ./butler status krisvih32alt/pixel-perfect-platformer:html
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
-    - name: Deploy HTML game
-      run: butler push . krisvih32alt/pixel-perfect-platformer:html --userversion ${{ github.sha }}
+    - name: Upload HTML game
+      run: ./butler push . krisvih32alt/pixel-perfect-platformer:html --userversion ${{ github.sha }}
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
