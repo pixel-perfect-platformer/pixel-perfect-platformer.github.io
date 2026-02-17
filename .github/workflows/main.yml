@@ -25,9 +25,11 @@ jobs:
       run: npm run build
     
     - name: Setup Butler
-      uses: manifoldco/setup-butler@v1
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        curl -L https://broth.itch.ovh/butler/linux-amd64LATEST/zip -o butler.zip
+        unzip butler.zip
+        chmod +x butler
+        echo "$PWD/butler" >> $GITHUB_PATH
     
     - name: Deploy HTML5 to itch.io
       run: butler push dist krisvih32alt/pixel-perfect-platformer:html5
@@ -57,6 +59,13 @@ jobs:
     - name: Build Tauri Windows
       run: npm run tauri build -- --target x86_64-pc-windows-msvc
     
+    - name: Setup Butler
+      shell: pwsh
+      run: |
+        Invoke-WebRequest -Uri "https://broth.itch.ovh/butler/windows-amd64LATEST.zip" -OutFile "butler.zip"
+        Expand-Archive -Path "butler.zip" -DestinationPath "./" -Force
+        Write-Output "$PWD\butler.exe" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+    
     - name: Zip Windows Release
       shell: pwsh
       run: |
@@ -68,13 +77,8 @@ jobs:
           exit 1
         }
     
-    - name: Setup Butler
-      uses: manifoldco/setup-butler@v1
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-    
     - name: Upload Windows to itch.io
-      run: butler push pixel-perfect-platformer-windows.zip krisvih32alt/pixel-perfect-platformer:windows
+      run: butler.exe push pixel-perfect-platformer-windows.zip krisvih32alt/pixel-perfect-platformer:windows
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
@@ -101,14 +105,16 @@ jobs:
     - name: Build Tauri macOS
       run: npm run tauri build -- --target aarch64-apple-darwin
     
+    - name: Setup Butler
+      run: |
+        curl -L https://broth.itch.ovh/butler/darwin-aarch64LATEST/zip -o butler.zip
+        unzip butler.zip
+        chmod +x butler
+        echo "$PWD/butler" >> $GITHUB_PATH
+    
     - name: Zip macOS Release
       run: |
         find src-tauri/target/release/ -name "*.app" | head -1 | xargs -I {} zip -r pixel-perfect-platformer-macos.zip {}
-    
-    - name: Setup Butler
-      uses: manifoldco/setup-butler@v1
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Upload macOS to itch.io
       run: butler push pixel-perfect-platformer-macos.zip krisvih32alt/pixel-perfect-platformer:mac
@@ -151,15 +157,17 @@ jobs:
     - name: Build Tauri Linux
       run: npm run tauri build -- --target x86_64-unknown-linux-gnu
     
+    - name: Setup Butler
+      run: |
+        curl -L https://broth.itch.ovh/butler/linux-amd64LATEST/zip -o butler.zip
+        unzip butler.zip
+        chmod +x butler
+        echo "$PWD/butler" >> $GITHUB_PATH
+    
     - name: Zip Linux Release
       run: |
         cd src-tauri/target/release/
         find . -name "*.AppImage" -o -name "pixel-perfect-platformer*" | head -1 | xargs -I {} zip -r ../pixel-perfect-platformer-linux.zip {}
-    
-    - name: Setup Butler
-      uses: manifoldco/setup-butler@v1
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Upload Linux to itch.io
       run: butler push pixel-perfect-platformer-linux.zip krisvih32alt/pixel-perfect-platformer:linux
