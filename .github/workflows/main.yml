@@ -23,6 +23,6 @@ jobs:
     - name: Create ZIP (Download button)
       run: |
         zip -r pixel-perfect.zip .
-        ./butler push pixel-perfect.zip krisvih32alt/pixel-perfect-platformer:default --userversion ${{ github.sha }}
+        ./butler push pixel-perfect.zip krisvih32alt/pixel-perfect-platformer:deploy-on-web-server --userversion ${{ github.sha }}
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
