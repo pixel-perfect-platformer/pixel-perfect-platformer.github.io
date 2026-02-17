@@ -21,8 +21,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
+    # Since your web is already working, use tauri build (creates dist/)
     - name: Build web
-      run: npm run build
+      run: npm run tauri build
     
     - name: Setup Butler
       run: |
@@ -78,7 +79,7 @@ jobs:
         }
     
     - name: Upload Windows to itch.io
-      run: butler.exe push pixel-perfect-platformer-windows.zip krisvih32alt/pixel-perfect-platformer:windows
+      run: .\butler.exe push pixel-perfect-platformer-windows.zip krisvih32alt/pixel-perfect-platformer:windows
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
 
