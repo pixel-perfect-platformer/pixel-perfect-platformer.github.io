@@ -3,99 +3,91 @@ name: Deploy Pixel Perfect Platformer
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
-  deploy:
+  # KEEP YOUR EXISTING WORKING WEB DEPLOYMENT SEPARATE
+  web:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+    - run: npm ci
+    # REPLACE with YOUR working web build command (check your current workflow)
+    - run: npm run tauri build  
+    - name: Deploy HTML5 to itch.io (YOUR WORKING VERSION)
+      run: |
+        # Copy your existing working web deploy steps here
+        # Keep what works perfectly!
+      env:
+        ITCHIO_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
+
+  # Native builds + butler (single matrix → artifacts → one butler job)
+  natives:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
-            channel: linux
-            zipname: pixel-perfect-platformer-linux.zip
-            butler: linux-amd64LATEST
+            artifact: linux
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            channel: windows
-            zipname: pixel-perfect-platformer-windows.zip
-            butler: windows-amd64LATEST
+            artifact: windows
           - os: macos-latest
             target: aarch64-apple-darwin
-            channel: mac
-            zipname: pixel-perfect-platformer-macos.zip
-            butler: darwin-aarch64LATEST
-    
+            artifact: mac
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Setup Rust cache
-      uses: swatinem/rust-cache@v2
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - uses: swatinem/rust-cache@v2
+    - uses: actions/setup-node@v4
       with:
         node-version: 20
         cache: 'npm'
-    
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
+    - uses: dtolnay/rust-toolchain@stable
       with:
         targets: ${{ matrix.target }}
     
-    - name: Install Linux dependencies
+    - name: Linux dependencies
       if: matrix.os == 'ubuntu-22.04'
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           libgtk-3-dev libwebkit2gtk-4.0-dev libjavascriptcoregtk-4.1-dev \
           libayatana-appindicator3-dev librsvg2-dev patchelf \
-          libssl-dev libxdo-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-          libglib2.0-dev pkg-config
-        
+          libssl-dev libxdo-dev libgstreamer1.0-dev \
+          libgobject2.0-dev libglib2.0-dev pkg-config
     
-    - name: Install dependencies
-      run: npm ci
+    - run: npm ci
+    - run: npm run tauri build -- --target ${{ matrix.target }}
     
-    - name: Build Tauri
-      run: npm run tauri build -- --target ${{ matrix.target }}
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact }}-build
+        path: |
+          src-tauri/target/release/**/*
+          !src-tauri/target/release/build/
+
+  butler:
+    needs: natives
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v4
     
-    - name: Setup Butler
-      if: matrix.os != 'windows-latest'
+    - name: Setup butler (ONCE)
       run: |
-        curl -L https://broth.itch.ovh/butler/${{ matrix.butler }}/zip -o butler.zip
+        curl -L https://broth.itch.ovh/butler/linux-amd64LATEST/zip -o butler.zip
         unzip butler.zip
         chmod +x butler
         echo "$PWD/butler" >> $GITHUB_PATH
     
-    - name: Setup Butler (Windows)
-      if: matrix.os == 'windows-latest'
-      shell: pwsh
+    - name: Upload all platforms to itch.io
       run: |
-        Invoke-WebRequest -Uri "https://broth.itch.ovh/butler/${{ matrix.butler }}.zip" -OutFile "butler.zip"
-        Expand-Archive -Path "butler.zip" -DestinationPath "./" -Force
-        Write-Output "$PWD\butler.exe" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-    
-    - name: Package & Upload Linux/Mac
-      if: matrix.os != 'windows-latest'
-      run: |
-        if [ "${{ matrix.os }}" = "macos-latest" ]; then
-          find src-tauri/target/release/ -name "*.app" | head -1 | xargs -I {} zip -r ${{ matrix.zipname }} {}
-        else
-          cd src-tauri/target/release/ && find . -name "*.AppImage" -o -name "pixel-perfect-platformer*" -type f | head -1 | xargs -I {} zip -r ../${{ matrix.zipname }} {}
-        fi
-        butler push ${{ matrix.zipname }} krisvih32alt/pixel-perfect-platformer:${{ matrix.channel }}
-      env:
-        BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
-    
-    - name: Package & Upload Windows
-      if: matrix.os == 'windows-latest'
-      shell: pwsh
-      run: |
-        $exe = Get-ChildItem "src-tauri/target/release/" -Recurse -Include "*.exe" | Select-Object -First 1
-        Compress-Archive -Path $exe.FullName -DestinationPath "${{ matrix.zipname }}" -Force
-        .\butler.exe push ${{ matrix.zipname }} krisvih32alt/pixel-perfect-platformer:${{ matrix.channel }}
+        butler push linux-build/* krisvih32alt/pixel-perfect-platformer:linux
+        butler push windows-build/* krisvih32alt/pixel-perfect-platformer:windows
+        butler push mac-build/* krisvih32alt/pixel-perfect-platformer:mac
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
