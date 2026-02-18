@@ -1,30 +1,10 @@
-name: Deploy Pixel Perfect Platformer
+name: Deploy Pixel Perfect Platformer (COMPLETE)
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  # KEEP YOUR EXISTING WORKING WEB DEPLOYMENT SEPARATE
-  web:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: 'npm'
-    - run: npm ci
-    # REPLACE with YOUR working web build command (check your current workflow)
-    - run: npm run tauri build  
-    - name: Deploy HTML5 to itch.io (YOUR WORKING VERSION)
-      run: |
-        # Copy your existing working web deploy steps here
-        # Keep what works perfectly!
-      env:
-        ITCHIO_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
-
-  # Native builds + butler (single matrix → artifacts → one butler job)
   natives:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -50,18 +30,31 @@ jobs:
       with:
         targets: ${{ matrix.target }}
     
-    - name: Linux dependencies
+    - name: Install Linux dependencies (COMPLETE FIX)
       if: matrix.os == 'ubuntu-22.04'
       run: |
         sudo apt-get update
         sudo apt-get install -y \
-          libgtk-3-dev libwebkit2gtk-4.0-dev libjavascriptcoregtk-4.1-dev \
-          libayatana-appindicator3-dev librsvg2-dev patchelf \
-          libssl-dev libxdo-dev libgstreamer1.0-dev \
-          libgobject2.0-dev libglib2.0-dev pkg-config
+          libgtk-3-dev \
+          libwebkit2gtk-4.0-dev \
+          libjavascriptcoregtk-4.1-dev \
+          libayatana-appindicator3-dev \
+          librsvg2-dev \
+          libssl-dev \
+          libxdo-dev \
+          libgstreamer1.0-dev \
+          libgstreamer-plugins-base1.0-dev \
+          libglib2.0-dev-bin \
+          libglib2.0-dev \
+          pkg-config \
+          gir1.2-glib-2.0 \
+          libgirepository1.0-dev
     
-    - run: npm ci
-    - run: npm run tauri build -- --target ${{ matrix.target }}
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build Tauri
+      run: npm run tauri build -- --target ${{ matrix.target }}
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
@@ -71,13 +64,35 @@ jobs:
           src-tauri/target/release/**/*
           !src-tauri/target/release/build/
 
+  web:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+    - run: npm ci
+    # Build web assets (Tauri creates dist/ folder)
+    - run: npm run tauri build
+    - name: Setup butler
+      run: |
+        curl -L https://broth.itch.ovh/butler/linux-amd64LATEST/zip -o butler.zip
+        unzip butler.zip
+        chmod +x butler
+        echo "$PWD/butler" >> $GITHUB_PATH
+    - name: Upload HTML5
+      run: butler push dist krisvih32alt/pixel-perfect-platformer:html5
+      env:
+        BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
+
   butler:
-    needs: natives
+    needs: [natives, web]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/download-artifact@v4
     
-    - name: Setup butler (ONCE)
+    - name: Setup butler (ONCE for all natives)
       run: |
         curl -L https://broth.itch.ovh/butler/linux-amd64LATEST/zip -o butler.zip
         unzip butler.zip
@@ -86,8 +101,11 @@ jobs:
     
     - name: Upload all platforms to itch.io
       run: |
-        butler push linux-build/* krisvih32alt/pixel-perfect-platformer:linux
-        butler push windows-build/* krisvih32alt/pixel-perfect-platformer:windows
-        butler push mac-build/* krisvih32alt/pixel-perfect-platformer:mac
+        # Linux
+        butler push linux-build/*.AppImage krisvih32alt/pixel-perfect-platformer:linux || butler push linux-build/* krisvih32alt/pixel-perfect-platformer:linux
+        # Windows  
+        butler push windows-build/*.exe krisvih32alt/pixel-perfect-platformer:windows || butler push windows-build/*.zip krisvih32alt/pixel-perfect-platformer:windows
+        # Mac
+        butler push mac-build/*.app krisvih32alt/pixel-perfect-platformer:mac
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
