@@ -14,6 +14,9 @@ let player = new Player()
 window.player = player;
 window.LevelManager = LevelManager;
 
+// Load images
+Constants.githubImg.src = 'github.png';
+
 // Initialize
 AuthService.init();
 EventHandlers.setupKeyboardEvents();
@@ -75,6 +78,13 @@ window.onLevelComplete = () => {
     const key = `level_${State.currentLevelIndex}`;
     State.levelCompletions[key] = true;
     localStorage.setItem('platformer_completions', JSON.stringify(State.levelCompletions));
+    
+    // Submit to leaderboard
+    if (State.currentUser) {
+        import('./leaderboard-service.js').then(({ LeaderboardService }) => {
+            LeaderboardService.submitScore(State.currentLevelIndex, parseFloat(State.completionTime), State.jumpCount);
+        });
+    }
 };
 
 window.onPlayerKilled = () => {

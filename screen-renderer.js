@@ -48,6 +48,7 @@ export class ScreenRenderer {
         this.drawCustomizeButton(ctx);
         this.drawCreditsButton(ctx);
         this.drawAccountButton(ctx);
+        this.drawGitHubButton(ctx);
 
         ctx.globalAlpha = 1;
     }
@@ -248,6 +249,27 @@ export class ScreenRenderer {
             ctx.font = 'bold 24px Arial';
             ctx.textAlign = 'center';
             ctx.fillText(State.currentUser ? '👤' : '🔓', accountX, accountY + 8);
+        }
+    }
+
+    static drawGitHubButton(ctx) {
+        const githubX = 3 * Constants.SCREEN_WIDTH / 4;
+        const githubY = Constants.SCREEN_HEIGHT / 2 + 50;
+        const githubRadius = 40;
+
+        ctx.fillStyle = 'rgba(128, 0, 128, 0.3)';
+        ctx.beginPath();
+        ctx.arc(githubX, githubY, githubRadius + 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#800080';
+        ctx.beginPath();
+        ctx.arc(githubX, githubY, githubRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (Constants.githubImg && Constants.githubImg.complete) {
+            const iconSize = 48;
+            ctx.drawImage(Constants.githubImg, githubX - iconSize / 2, githubY - iconSize / 2, iconSize, iconSize);
         }
     }
 
@@ -578,14 +600,14 @@ export class ScreenRenderer {
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('Sign In (Email)', Constants.SCREEN_WIDTH / 2, 220);
+            ctx.fillText('Sign In (Username)', Constants.SCREEN_WIDTH / 2, 220);
             
             ctx.fillStyle = '#17a2b8';
             UIManager.roundRectPath(ctx, Constants.SCREEN_WIDTH / 2 - 80, 250, 160, 40, 5);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('Sign Up (Email)', Constants.SCREEN_WIDTH / 2, 275);
+            ctx.fillText('Sign Up (Username)', Constants.SCREEN_WIDTH / 2, 275);
         }
         
         ctx.globalAlpha = 1;
@@ -698,6 +720,30 @@ export class ScreenRenderer {
             ctx.font = 'bold 14px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('+ New Level', btnX + btnW / 2, btnY + btnH / 2 + 5);
+            
+            const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
+            if (isAdmin) {
+                const tabY = 15;
+                const tabWidth = 100;
+                const tabHeight = 30;
+                const tabSpacing = 10;
+                const tabStartX = Constants.SCREEN_WIDTH / 2 - tabWidth - tabSpacing / 2;
+                
+                ctx.fillStyle = State.levelCategory === 'official' ? '#3498db' : '#7f8c8d';
+                UIManager.roundRectPath(ctx, tabStartX, tabY, tabWidth, tabHeight, 5);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Official', tabStartX + tabWidth / 2, tabY + tabHeight / 2 + 4);
+                
+                ctx.fillStyle = State.levelCategory === 'community' ? '#3498db' : '#7f8c8d';
+                UIManager.roundRectPath(ctx, tabStartX + tabWidth + tabSpacing, tabY, tabWidth, tabHeight, 5);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText('Community', tabStartX + tabWidth + tabSpacing + tabWidth / 2, tabY + tabHeight / 2 + 4);
+            }
         }
         
         if (!State.editorMode && !State.selectingForEditor) {
@@ -798,6 +844,16 @@ export class ScreenRenderer {
                 ctx.font = '18px Arial';
                 ctx.textAlign = 'left';
                 ctx.fillText(level.name || `Level ${startIndex + i + 1}`, startX + 15, y + 27);
+                
+                ctx.fillStyle = '#dc3545';
+                const deleteX = startX + itemWidth - 35;
+                const deleteY = y + 5;
+                UIManager.roundRectPath(ctx, deleteX, deleteY, 30, 30, 3);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('✕', deleteX + 15, deleteY + 20);
             });
             
             ctx.globalAlpha = 1;

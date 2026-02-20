@@ -274,7 +274,9 @@ export class EventHandlers {
     static handleDoubleClick(e) {}
     
     static triggerButtonAnimation(button) {
-        if (button === 'play' && !State.isAnimating) {
+        if (button === 'github') {
+            window.open('https://github.com/pixel-perfect-platformer/pixel-perfect-platformer.github.io/issues', '_blank');
+        } else if (button === 'play' && !State.isAnimating) {
             State.isAnimating = true;
             State.animationStartTime = Date.now();
         } else if (button === 'editor' && !State.isAnimatingEditor) {
@@ -298,7 +300,8 @@ export class EventHandlers {
             { x: 3 * Constants.SCREEN_WIDTH / 4, y: Constants.SCREEN_HEIGHT / 2 - 50, type: 'editor' },
             { x: Constants.SCREEN_WIDTH / 4, y: Constants.SCREEN_HEIGHT / 2 + 50, type: 'customize' },
             { x: Constants.SCREEN_WIDTH / 2, y: Constants.SCREEN_HEIGHT / 2 - 50, type: 'credits' },
-            { x: Constants.SCREEN_WIDTH / 2, y: Constants.SCREEN_HEIGHT / 2 + 50, type: 'account' }
+            { x: Constants.SCREEN_WIDTH / 2, y: Constants.SCREEN_HEIGHT / 2 + 50, type: 'account' },
+            { x: 3 * Constants.SCREEN_WIDTH / 4, y: Constants.SCREEN_HEIGHT / 2 + 50, type: 'github' }
         ];
 
         for (const btn of buttons) {
@@ -487,9 +490,30 @@ export class EventHandlers {
             const btnH = 30;
             if (pos.x >= btnX && pos.x <= btnX + btnW && pos.y >= btnY && pos.y <= btnY + btnH) {
                 const name = prompt('Enter level name:') || 'New Level';
-                State.levels.push({ name, blocks: [], texts: [], category: 'community' });
+                State.levels.push({ name, blocks: [], texts: [], category: State.levelCategory });
                 window.LevelManager?.saveLevelsToStorage();
                 return;
+            }
+            
+            const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
+            if (isAdmin) {
+                const tabY = 15;
+                const tabWidth = 100;
+                const tabHeight = 30;
+                const tabSpacing = 10;
+                const tabStartX = Constants.SCREEN_WIDTH / 2 - tabWidth - tabSpacing / 2;
+                
+                if (pos.y >= tabY && pos.y <= tabY + tabHeight) {
+                    if (pos.x >= tabStartX && pos.x <= tabStartX + tabWidth) {
+                        State.levelCategory = 'official';
+                        State.levelListPage = 0;
+                        return;
+                    } else if (pos.x >= tabStartX + tabWidth + tabSpacing && pos.x <= tabStartX + 2 * tabWidth + tabSpacing) {
+                        State.levelCategory = 'community';
+                        State.levelListPage = 0;
+                        return;
+                    }
+                }
             }
             
             const filteredLevels = State.levels.filter(l => (l.category || 'official') === State.levelCategory);
@@ -522,6 +546,21 @@ export class EventHandlers {
             
             visibleLevels.forEach((level, i) => {
                 const y = startY + i * itemHeight;
+                const deleteX = startX + itemWidth - 35;
+                const deleteY = y + 5;
+                
+                if (pos.x >= deleteX && pos.x <= deleteX + 30 && pos.y >= deleteY && pos.y <= deleteY + 30) {
+                    if (confirm(`Delete "${level.name || `Level ${startIndex + i + 1}`}"?`)) {
+                        const actualIndex = State.levels.indexOf(level);
+                        State.levels.splice(actualIndex, 1);
+                        window.LevelManager?.saveLevelsToStorage();
+                        if (State.levelListPage > 0 && filteredLevels.length - 1 <= State.levelListPage * itemsPerPage) {
+                            State.levelListPage--;
+                        }
+                    }
+                    return;
+                }
+                
                 if (pos.x >= startX && pos.x <= startX + itemWidth && pos.y >= y && pos.y <= y + itemHeight - 10) {
                     const actualIndex = State.levels.indexOf(level);
                     window.LevelManager?.loadLevel(actualIndex);
@@ -540,9 +579,30 @@ export class EventHandlers {
             const btnH = 30;
             if (pos.x >= btnX && pos.x <= btnX + btnW && pos.y >= btnY && pos.y <= btnY + btnH) {
                 const name = prompt('Enter level name:') || 'New Level';
-                State.levels.push({ name, blocks: [], texts: [], category: 'community' });
+                State.levels.push({ name, blocks: [], texts: [], category: State.levelCategory });
                 window.LevelManager?.saveLevelsToStorage();
                 return;
+            }
+            
+            const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
+            if (isAdmin) {
+                const tabY = 15;
+                const tabWidth = 100;
+                const tabHeight = 30;
+                const tabSpacing = 10;
+                const tabStartX = Constants.SCREEN_WIDTH / 2 - tabWidth - tabSpacing / 2;
+                
+                if (pos.y >= tabY && pos.y <= tabY + tabHeight) {
+                    if (pos.x >= tabStartX && pos.x <= tabStartX + tabWidth) {
+                        State.levelCategory = 'official';
+                        State.levelListPage = 0;
+                        return;
+                    } else if (pos.x >= tabStartX + tabWidth + tabSpacing && pos.x <= tabStartX + 2 * tabWidth + tabSpacing) {
+                        State.levelCategory = 'community';
+                        State.levelListPage = 0;
+                        return;
+                    }
+                }
             }
             
             const filteredLevels = State.levels.filter(l => (l.category || 'official') === State.levelCategory);
@@ -575,6 +635,21 @@ export class EventHandlers {
             
             visibleLevels.forEach((level, i) => {
                 const y = startY + i * itemHeight;
+                const deleteX = startX + itemWidth - 35;
+                const deleteY = y + 5;
+                
+                if (pos.x >= deleteX && pos.x <= deleteX + 30 && pos.y >= deleteY && pos.y <= deleteY + 30) {
+                    if (confirm(`Delete "${level.name || `Level ${startIndex + i + 1}`}"?`)) {
+                        const actualIndex = State.levels.indexOf(level);
+                        State.levels.splice(actualIndex, 1);
+                        window.LevelManager?.saveLevelsToStorage();
+                        if (State.levelListPage > 0 && filteredLevels.length - 1 <= State.levelListPage * itemsPerPage) {
+                            State.levelListPage--;
+                        }
+                    }
+                    return;
+                }
+                
                 if (pos.x >= startX && pos.x <= startX + itemWidth && pos.y >= y && pos.y <= y + itemHeight - 10) {
                     const actualIndex = State.levels.indexOf(level);
                     window.LevelManager?.loadLevel(actualIndex);
@@ -588,7 +663,9 @@ export class EventHandlers {
         const tabWidth = 100;
         const tabHeight = 30;
         const tabSpacing = 10;
-        const tabStartX = Constants.SCREEN_WIDTH / 2 - tabWidth - tabSpacing / 2;
+        const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
+        const numTabs = isAdmin ? 3 : 2;
+        const tabStartX = Constants.SCREEN_WIDTH / 2 - (numTabs * tabWidth + (numTabs - 1) * tabSpacing) / 2;
         
         if (pos.y >= tabY && pos.y <= tabY + tabHeight) {
             if (pos.x >= tabStartX && pos.x <= tabStartX + tabWidth) {
@@ -597,6 +674,10 @@ export class EventHandlers {
                 return;
             } else if (pos.x >= tabStartX + tabWidth + tabSpacing && pos.x <= tabStartX + tabWidth * 2 + tabSpacing) {
                 State.levelCategory = 'community';
+                State.currentLevelView = 0;
+                return;
+            } else if (isAdmin && pos.x >= tabStartX + 2 * (tabWidth + tabSpacing) && pos.x <= tabStartX + 3 * tabWidth + 2 * tabSpacing) {
+                State.levelCategory = 'admin';
                 State.currentLevelView = 0;
                 return;
             }

@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read/write their own user data
+    match /user_levels/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    match /user_progress/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to read all levels, but only write their own
+    match /levels/{levelId} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+        (request.auth.uid == resource.data.userId || 
+         request.auth.uid == request.resource.data.userId);
+    }
+    
+    // Only admin users can write to official levels
+    match /official_levels/{levelId} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+        (request.auth.token.email == 'krisvih32@platformer.local' ||
+         request.auth.token.name == 'krisvih32');
+    }
+    
+    // Allow authenticated users to read/write published levels
+    match /published_levels/{levelId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read/write progress
+    match /progress/{progressId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

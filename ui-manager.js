@@ -93,13 +93,17 @@ export class UIManager {
                     if (buttonType === 'play') {
                         State.showTitleScreen = false;
                         State.showLevelsScreen = true;
+                        State.editorMode = false;
+                        State.selectingForEditor = false;
+                        State.levelCategory = 'official';
                         State.isAnimating = false;
                         State.isAnimatingEditor = false;
                         if (Constants.titleMusic) this.fadeOutMusic();
                         history.pushState({ screen: 'game' }, '', '');
                     } else if (buttonType === 'editor') {
                         State.showTitleScreen = false;
-                        State.levelCategory = 'community';
+                        const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
+                        State.levelCategory = isAdmin ? 'official' : 'community';
                         State.showLevelsScreen = true;
                         State.selectingForEditor = true;
                         State.currentLevelView = 0;

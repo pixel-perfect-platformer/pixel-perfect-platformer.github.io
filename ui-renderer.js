@@ -144,7 +144,8 @@ export class UIRenderer {
                 history.pushState({ screen: 'game' }, '', '');
             } else if (type === 'editor') {
                 State.showTitleScreen = false;
-                State.levelCategory = 'community';
+                const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
+                State.levelCategory = isAdmin ? 'admin' : 'community';
                 State.showLevelsScreen = true;
                 State.selectingForEditor = true;
                 State.currentLevelView = 0;
@@ -175,7 +176,8 @@ export class UIRenderer {
                     State.editorMode = false;
                     State.showLevelsScreen = true;
                     State.selectingForEditor = true;
-                    State.levelCategory = 'community';
+                    const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
+                    State.levelCategory = isAdmin ? 'admin' : 'community';
                 } else if (State.backFromLevel) {
                     State.showLevelsScreen = true;
                     State.backFromLevel = false;

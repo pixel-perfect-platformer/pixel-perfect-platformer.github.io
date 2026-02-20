@@ -66,6 +66,10 @@ export class FirebaseService {
 
   async saveUserLevels(userId, levels) {
     try {
+      if (!auth.currentUser) {
+        console.warn('User not authenticated, skipping save');
+        return false;
+      }
       await setDoc(doc(db, 'user_levels', userId), {
         levels: levels,
         updatedAt: new Date(),
@@ -115,9 +119,16 @@ export class FirebaseService {
   
   async saveLevelToCloud(levelIndex, levelData) {
     try {
-      await setDoc(doc(db, 'levels', `level_${levelIndex}`), {
+      if (!auth.currentUser) {
+        console.warn('User not authenticated, skipping cloud save');
+        return false;
+      }
+      const category = levelData.category || 'community';
+      const collectionName = category === 'official' ? 'official_levels' : 'levels';
+      await setDoc(doc(db, collectionName, `level_${levelIndex}`), {
         ...levelData,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        userId: auth.currentUser.uid
       });
       return true;
     } catch (error) {
@@ -139,11 +150,21 @@ export class FirebaseService {
 
   async getAllLevels() {
     try {
-      const querySnapshot = await getDocs(collection(db, 'levels'));
       const levels = [];
-      querySnapshot.forEach((doc) => {
-        levels.push({ id: doc.id, ...doc.data() });
+      try {
+        const officialSnapshot = await getDocs(collection(db, 'official_levels'));
+        officialSnapshot.forEach((doc) => {
+          levels.push({ id: doc.id, ...doc.data(), category: 'official' });
+        });
+      } catch (e) {
+        console.log('No official levels collection yet');
+      }
+      
+      const communitySnapshot = await getDocs(collection(db, 'levels'));
+      communitySnapshot.forEach((doc) => {
+        levels.push({ id: doc.id, ...doc.data(), category: doc.data().category || 'community' });
       });
+      
       return levels;
     } catch (error) {
       console.error('Error loading levels:', error);
@@ -151,9 +172,10 @@ export class FirebaseService {
     }
   }
 
-  async deleteLevel(levelIndex) {
+  async deleteLevel(levelIndex, category) {
     try {
-      await deleteDoc(doc(db, 'levels', `level_${levelIndex}`));
+      const collectionName = category === 'official' ? 'official_levels' : 'levels';
+      await deleteDoc(doc(db, collectionName, `level_${levelIndex}`));
       return true;
     } catch (error) {
       console.error('Error deleting level:', error);

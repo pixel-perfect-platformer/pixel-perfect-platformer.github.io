@@ -6,11 +6,9 @@ export class LevelManager {
     static async saveLevelsToStorage() {
         try {
             if (State.editorMode && State.levels[State.currentLevelIndex]) {
-                State.levels[State.currentLevelIndex].category = 'community';
                 State.levels[State.currentLevelIndex].blocks = this.cloneData(State.blocks);
                 State.levels[State.currentLevelIndex].texts = this.cloneData(State.texts);
             }
-            localStorage.setItem('platformer_levels', JSON.stringify(State.levels));
             for (let i = 0; i < State.levels.length; i++) {
                 await firebaseService.saveLevelToCloud(i, State.levels[i]);
             }
@@ -58,24 +56,6 @@ export class LevelManager {
     }
 
     static async loadLevelsFromStorage() {
-        const data = localStorage.getItem('platformer_levels');
-        if (data) {
-            try { 
-                const allLevels = JSON.parse(data);
-                State.levels = allLevels.map(level => ({
-                    ...level,
-                    category: level.category || 'official'
-                }));
-                if (State.levels && State.levels.length > 0) {
-                    this.populateLevelSelect();
-                    this.loadLevel(0);
-                    return;
-                }
-            } catch (e) { 
-                State.levels = []; 
-            }
-        }
-        
         try {
             const cloudLevels = await firebaseService.getAllLevels();
             if (cloudLevels.length > 0) {
@@ -83,7 +63,8 @@ export class LevelManager {
                     name: level.name,
                     blocks: level.blocks || [],
                     texts: level.texts || [],
-                    category: level.category || 'official'
+                    category: level.category || 'community',
+                    official: level.category === 'official'
                 }));
                 this.populateLevelSelect();
                 this.loadLevel(0);
@@ -94,7 +75,7 @@ export class LevelManager {
         }
         
         if (!State.levels || State.levels.length === 0) {
-            State.levels = [{ name: 'Level 1', blocks: [], texts: [], category: 'official' }];
+            State.levels = [{ name: 'Level 1', blocks: [], texts: [], category: 'official', official: true }];
             this.saveLevelsToStorage();
         }
         this.populateLevelSelect();
@@ -127,9 +108,8 @@ export class LevelManager {
             this.saveLevelsToStorage();
         }
         
-        if (State.editorMode && State.levels[index].category !== 'community') {
-            State.levels[index].category = 'community';
-            this.saveLevelsToStorage();
+        if (State.editorMode && State.levels[index].category === 'official') {
+            State.levels[index].category = 'official';
         }
         
         this.positionPlayerOnSpawn();
@@ -187,5 +167,9 @@ export class LevelManager {
                 break;
             }
         }
+    }
+
+    static isOfficialLevel(levelIndex) {
+        return State.levels[levelIndex]?.official === true;
     }
 }

@@ -36,6 +36,7 @@ class Constants {
     static editorHint = document.getElementById('editorHint');
     static titleMusic = document.getElementById('titleMusic');
 
+    static githubImg = new Image();
 
     static animationDuration = 1000; // 1 seconds
 }
