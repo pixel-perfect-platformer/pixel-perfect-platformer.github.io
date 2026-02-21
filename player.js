@@ -94,6 +94,7 @@ class Player {
             Input.jumpUsed = true;
             this.onGround = false;
             State.jumpCount++;
+            if (window.ReplayRecorder) window.ReplayRecorder.recordInput('jump', Date.now());
         }
 
         // Apply friction: reduce lateral speed when no input

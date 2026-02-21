@@ -444,6 +444,10 @@ export class ScreenRenderer {
                 ctx.globalAlpha = 1 - State.fadeOpacity;
             }
             if (progress >= 1) {
+                if (State.editorMode && State.levels[State.currentLevelIndex]) {
+                    State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
+                    State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                }
                 State.isAnimatingBack = false;
                 State.isRunning = false;
                 State.showCompletionScreen = false;
@@ -631,7 +635,13 @@ export class ScreenRenderer {
                 const filteredLevels = State.levels.filter(l => (l.category || 'official') === State.levelCategory);
                 const level = filteredLevels[State.currentLevelView];
                 const actualIndex = State.levels.indexOf(level);
-                window.LevelManager?.loadLevel(actualIndex);
+                if (actualIndex !== -1) {
+                    if (State.editorMode && State.levels[State.currentLevelIndex]) {
+                        State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
+                        State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                    }
+                    window.LevelManager?.loadLevel(actualIndex);
+                }
                 State.showLevelsScreen = false;
                 if (!State.editorMode) {
                     State.isRunning = true;
@@ -871,7 +881,9 @@ export class ScreenRenderer {
         }
         
         const level = filteredLevels[levelIndex];
+        if (!level) return;
         const actualIndex = State.levels.indexOf(level);
+        if (actualIndex === -1) return;
         const completed = State.levelCompletions[`level_${actualIndex}`];
         
         ctx.fillStyle = completed ? '#28a745' : '#6c757d';

@@ -562,6 +562,10 @@ export class EventHandlers {
                 }
                 
                 if (pos.x >= startX && pos.x <= startX + itemWidth && pos.y >= y && pos.y <= y + itemHeight - 10) {
+                    if (State.editorMode && State.levels[State.currentLevelIndex]) {
+                        State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
+                        State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                    }
                     const actualIndex = State.levels.indexOf(level);
                     window.LevelManager?.loadLevel(actualIndex);
                     State.showLevelsScreen = false;
@@ -651,6 +655,10 @@ export class EventHandlers {
                 }
                 
                 if (pos.x >= startX && pos.x <= startX + itemWidth && pos.y >= y && pos.y <= y + itemHeight - 10) {
+                    if (State.editorMode && State.levels[State.currentLevelIndex]) {
+                        State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
+                        State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                    }
                     const actualIndex = State.levels.indexOf(level);
                     window.LevelManager?.loadLevel(actualIndex);
                     State.showLevelsScreen = false;

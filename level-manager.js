@@ -94,6 +94,10 @@ export class LevelManager {
     }
 
     static loadLevel(index) {
+        if (!State.levels[index]) {
+            console.error('Level not found at index:', index);
+            return;
+        }
         State.currentLevelIndex = index;
         State.blocks = this.cloneData(State.levels[index].blocks || []);
         State.texts = this.cloneData(State.levels[index].texts || []);

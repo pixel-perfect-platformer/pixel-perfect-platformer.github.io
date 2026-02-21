@@ -6,6 +6,7 @@ import { EventHandlers } from './event-handlers.js';
 import { UIHelpers } from './ui-helpers.js';
 import { LevelManager } from './level-manager.js';
 import { AuthService } from './auth-service.js';
+import { ReplayRecorder } from './replay-recorder.js';
 
 let canvas = new Canvas()
 let player = new Player()
@@ -13,6 +14,7 @@ let player = new Player()
 // Make player and LevelManager globally accessible
 window.player = player;
 window.LevelManager = LevelManager;
+window.ReplayRecorder = ReplayRecorder;
 
 // Load images
 Constants.githubImg.src = 'github.png';
@@ -55,7 +57,11 @@ function gameLoop(time) {
         
         if (!State.editorMode) {
             if (State.isRunning) {
-                if (State.levelStartTime === 0) State.levelStartTime = Date.now();
+                if (State.levelStartTime === 0) {
+                    State.levelStartTime = Date.now();
+                    ReplayRecorder.start();
+                }
+                ReplayRecorder.recordFrame(); // Record frame for anti-cheat
                 player.update();
             }
             player.draw(canvas.ctx);
@@ -82,7 +88,7 @@ window.onLevelComplete = () => {
     // Submit to leaderboard
     if (State.currentUser) {
         import('./leaderboard-service.js').then(({ LeaderboardService }) => {
-            LeaderboardService.submitScore(State.currentLevelIndex, parseFloat(State.completionTime), State.jumpCount);
+            LeaderboardService.submitScore(State.currentLevelIndex, parseFloat(State.completionTime), State.jumpCount, ReplayRecorder.getReplay());
         });
     }
 };

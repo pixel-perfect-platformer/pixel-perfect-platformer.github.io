@@ -4,20 +4,29 @@
       "$levelId": {
         "scores": {
           ".read": true,
-          ".write": "auth != null",
           "$scoreId": {
-            ".validate": "newData.hasChildren(['uid', 'username', 'levelIndex', 'time', 'jumps', 'timestamp']) && newData.child('time').isNumber() && newData.child('time').val() >= 0.5 && newData.child('time').val() <= 3600 && newData.child('jumps').isNumber() && newData.child('jumps').val() >= 0 && newData.child('jumps').val() <= 10000 && newData.child('uid').val() == auth.uid"
+            ".write": "auth != null && newData.child('uid').val() == auth.uid && !data.exists()",
+            ".validate": "newData.hasChildren(['uid', 'username', 'levelIndex', 'time', 'jumps', 'timestamp', 'replay', 'securityHash', 'clientVersion', 'physicsHash']) && newData.child('time').isNumber() && newData.child('time').val() >= 0.5 && newData.child('time').val() <= 3600 && newData.child('jumps').isNumber() && newData.child('jumps').val() >= 0 && newData.child('jumps').val() <= 10000 && newData.child('uid').val() == auth.uid && newData.child('timestamp').val() <= now + 10000 && newData.child('timestamp').val() >= now - 10000 && newData.child('replay').isString() && newData.child('replay').val().length >= 10 && newData.child('replay').val().length <= 50000 && newData.child('securityHash').isString() && newData.child('clientVersion').isString() && newData.child('physicsHash').isString() && newData.child('time').val() * 60 >= newData.child('jumps').val()"
           }
         }
       }
     },
     "levels": {
       ".read": true,
-      ".write": "auth != null"
+      "$levelId": {
+        ".write": "auth != null && (!data.exists() || data.child('userId').val() == auth.uid)"
+      }
     },
     "official_levels": {
       ".read": true,
       ".write": "auth != null && (auth.token.email == 'krisvih32@platformer.local' || root.child('admins').child(auth.uid).exists())"
+    },
+    "suspicious_activity": {
+      ".read": "auth != null && (auth.token.email == 'krisvih32@platformer.local' || root.child('admins').child(auth.uid).exists())",
+      "$reportId": {
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['uid', 'type', 'details', 'timestamp']) && newData.child('uid').val() == auth.uid && newData.child('timestamp').val() <= now + 60000"
+      }
     }
   }
 }
