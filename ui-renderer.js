@@ -145,7 +145,7 @@ export class UIRenderer {
             } else if (type === 'editor') {
                 State.showTitleScreen = false;
                 const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
-                State.levelCategory = isAdmin ? 'admin' : 'community';
+                State.levelCategory = isAdmin ? 'official' : 'community';
                 State.showLevelsScreen = true;
                 State.selectingForEditor = true;
                 State.currentLevelView = 0;
@@ -173,11 +173,15 @@ export class UIRenderer {
                 State.showCreditsScreen = false;
                 State.showSignInScreen = false;
                 if (State.editorMode) {
-                    State.editorMode = false;
+                    if (State.levels[State.currentLevelIndex]) {
+                        State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
+                        State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                        window.LevelManager?.saveLevelsToStorage();
+                    }                    State.editorMode = false;
                     State.showLevelsScreen = true;
                     State.selectingForEditor = true;
                     const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
-                    State.levelCategory = isAdmin ? 'admin' : 'community';
+                    State.levelCategory = isAdmin ? 'official' : 'community';
                 } else if (State.backFromLevel) {
                     State.showLevelsScreen = true;
                     State.backFromLevel = false;

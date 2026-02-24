@@ -27,7 +27,11 @@ class Input {
                 State.rightPressed = true;
             } else if (e.code == 'Escape') {
                 if (!State.showTitleScreen && !State.isAnimating && !State.isAnimatingEditor && !State.isAnimatingBack) {
-                    State.isRunning = false;
+                    if (State.editorMode && State.levels[State.currentLevelIndex]) {
+                        State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
+                        State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                        window.LevelManager?.saveLevelsToStorage();
+                    }                    State.isRunning = false;
                     State.editorMode = false;
                     if (Constants.startBtn) Constants.startBtn.style.display = 'none';
                     if (Constants.editorBtn) Constants.editorBtn.style.display = 'none';
@@ -56,7 +60,11 @@ class Input {
             const p = canvasToGameCoords(e.touches[0]);
             // Handle back arrow for touch
             if (!State.showTitleScreen && window._isBackArrowAtPos && window._isBackArrowAtPos(p.x, p.y) && !State.isAnimating && !State.isAnimatingEditor && !State.isAnimatingBack) {
-                State.isRunning = false;
+                if (State.editorMode && State.levels[State.currentLevelIndex]) {
+                    State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
+                    State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                    window.LevelManager?.saveLevelsToStorage();
+                }                State.isRunning = false;
                 State.editorMode = false;
                 State.showCustomizationScreen = false;
                 State.showTitleScreen = true;

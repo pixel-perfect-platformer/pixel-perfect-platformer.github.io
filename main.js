@@ -18,6 +18,8 @@ window.ReplayRecorder = ReplayRecorder;
 
 // Load images
 Constants.githubImg.src = 'github.png';
+Constants.openLockImg.src = 'open_lock.png';
+Constants.closedLockImg.src = 'closed_lock.png';
 
 // Initialize
 AuthService.init();

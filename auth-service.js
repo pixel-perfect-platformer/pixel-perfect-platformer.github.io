@@ -1,5 +1,5 @@
 import { auth } from './firebase-config.js';
-import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js';
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js';
 import State from './state.js';
 
 export class AuthService {
@@ -71,6 +71,28 @@ export class AuthService {
         } catch (error) {
             console.error('Sign-out error:', error);
             alert('Sign-out failed: ' + error.message);
+        }
+    }
+
+    static async changePassword(currentPassword, newPassword) {
+        if (this.isSigningIn) return;
+        this.isSigningIn = true;
+        
+        try {
+            const user = auth.currentUser;
+            if (!user) throw new Error('No user logged in');
+            
+            const credential = EmailAuthProvider.credential(user.email, currentPassword);
+            await reauthenticateWithCredential(user, credential);
+            await updatePassword(user, newPassword);
+            alert('Password changed successfully');
+            return true;
+        } catch (error) {
+            console.error('Password change error:', error);
+            alert('Password change failed: ' + error.message);
+            return false;
+        } finally {
+            this.isSigningIn = false;
         }
     }
 }

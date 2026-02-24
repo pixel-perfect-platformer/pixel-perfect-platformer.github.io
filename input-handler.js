@@ -47,6 +47,11 @@ export class InputHandler {
     handleEscape() {
         if (!State.showTitleScreen && !State.isAnimating && 
             !State.isAnimatingEditor && !State.isAnimatingBack) {
+            if (State.editorMode && State.levels[State.currentLevelIndex]) {
+                State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
+                State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                window.LevelManager?.saveLevelsToStorage();
+            }
             State.isRunning = false;
             State.editorMode = false;
             State.isAnimatingBack = true;

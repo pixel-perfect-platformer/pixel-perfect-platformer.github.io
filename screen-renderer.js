@@ -206,6 +206,7 @@ export class ScreenRenderer {
                 ctx.globalAlpha = 1 - State.fadeOpacity;
             }
             if (progress >= 1) {
+                console.log('Account button animation complete! Showing sign-in screen...');
                 State.isAnimatingSignIn = false;
                 State.showTitleScreen = false;
                 State.showSignInScreen = true;
@@ -230,10 +231,11 @@ export class ScreenRenderer {
             ctx.arc(accountX, accountY, accountRadius, 0, Math.PI * 2);
             ctx.fill();
             
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 24px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(State.currentUser ? '👤' : '🔓', accountX, accountY + 8);
+            const lockImg = State.currentUser ? Constants.closedLockImg : Constants.openLockImg;
+            if (lockImg && lockImg.complete) {
+                const iconSize = 60;
+                ctx.drawImage(lockImg, accountX - iconSize / 2, accountY - iconSize / 2, iconSize, iconSize);
+            }
             
             ctx.restore();
         } else {
@@ -245,10 +247,11 @@ export class ScreenRenderer {
             ctx.beginPath();
             ctx.arc(accountX, accountY, accountRadius, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 24px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(State.currentUser ? '👤' : '🔓', accountX, accountY + 8);
+            const lockImg = State.currentUser ? Constants.closedLockImg : Constants.openLockImg;
+            if (lockImg && lockImg.complete) {
+                const iconSize = 60;
+                ctx.drawImage(lockImg, accountX - iconSize / 2, accountY - iconSize / 2, iconSize, iconSize);
+            }
         }
     }
 
@@ -447,6 +450,7 @@ export class ScreenRenderer {
                 if (State.editorMode && State.levels[State.currentLevelIndex]) {
                     State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
                     State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                    window.LevelManager?.saveLevelsToStorage();
                 }
                 State.isAnimatingBack = false;
                 State.isRunning = false;
@@ -581,12 +585,22 @@ export class ScreenRenderer {
             const username = State.currentUser.email ? State.currentUser.email.replace('@platformer.local', '') : State.currentUser.displayName;
             ctx.fillText(`Signed in as: ${username}`, Constants.SCREEN_WIDTH / 2, 150);
             
+            const isEmailUser = State.currentUser.email && State.currentUser.email.includes('@platformer.local');
+            if (isEmailUser) {
+                ctx.fillStyle = '#ffc107';
+                UIManager.roundRectPath(ctx, Constants.SCREEN_WIDTH / 2 - 80, 180, 160, 40, 5);
+                ctx.fill();
+                ctx.fillStyle = '#000000';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText('Change Password', Constants.SCREEN_WIDTH / 2, 205);
+            }
+            
             ctx.fillStyle = '#dc3545';
-            UIManager.roundRectPath(ctx, Constants.SCREEN_WIDTH / 2 - 60, 200, 120, 40, 5);
+            UIManager.roundRectPath(ctx, Constants.SCREEN_WIDTH / 2 - 60, isEmailUser ? 235 : 200, 120, 40, 5);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 16px Arial';
-            ctx.fillText('Sign Out', Constants.SCREEN_WIDTH / 2, 225);
+            ctx.fillText('Sign Out', Constants.SCREEN_WIDTH / 2, isEmailUser ? 260 : 225);
         } else {
             ctx.fillStyle = '#4285f4';
             UIManager.roundRectPath(ctx, Constants.SCREEN_WIDTH / 2 - 80, 110, 160, 40, 5);
@@ -639,6 +653,7 @@ export class ScreenRenderer {
                     if (State.editorMode && State.levels[State.currentLevelIndex]) {
                         State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
                         State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                        window.LevelManager?.saveLevelsToStorage();
                     }
                     window.LevelManager?.loadLevel(actualIndex);
                 }

@@ -159,7 +159,11 @@ export class UIScreens {
                 State.showCustomizationScreen = false;
                 State.showCreditsScreen = false;
                 State.showSignInScreen = false;
-                State.editorMode = false;
+                if (State.editorMode && State.levels[State.currentLevelIndex]) {
+                    State.levels[State.currentLevelIndex].blocks = window.LevelManager.cloneData(State.blocks);
+                    State.levels[State.currentLevelIndex].texts = window.LevelManager.cloneData(State.texts);
+                    window.LevelManager?.saveLevelsToStorage();
+                }                State.editorMode = false;
                 State.isRunning = false;
                 State.showCompletionScreen = false;
                 State.showDeathScreen = false;

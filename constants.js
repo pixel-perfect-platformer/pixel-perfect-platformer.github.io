@@ -37,6 +37,8 @@ class Constants {
     static titleMusic = document.getElementById('titleMusic');
 
     static githubImg = new Image();
+    static openLockImg = new Image();
+    static closedLockImg = new Image();
 
     static animationDuration = 1000; // 1 seconds
 }

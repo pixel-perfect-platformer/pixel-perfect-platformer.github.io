@@ -143,6 +143,7 @@ export class EventHandlers {
 
         if (State.showTitleScreen) {
             const button = this.getTitleButtonAt(pos);
+            console.log('Mouse down at', pos, 'detected button:', button);
             if (button) {
                 State.pressedTitleButton = button;
                 State.titleButtonIsDown = true;
@@ -260,6 +261,7 @@ export class EventHandlers {
         
         if (State.showTitleScreen && State.pressedTitleButton) {
             const button = this.getTitleButtonAt(pos);
+            console.log('Mouse up - pressed:', State.pressedTitleButton, 'current:', button);
             if (button === State.pressedTitleButton) {
                 this.triggerButtonAnimation(button);
             }
@@ -289,6 +291,7 @@ export class EventHandlers {
             State.isAnimatingCredits = true;
             State.animationStartTimeCredits = Date.now();
         } else if (button === 'account' && !State.isAnimatingSignIn) {
+            console.log('Account button clicked! Starting animation...');
             State.isAnimatingSignIn = true;
             State.animationStartTimeSignIn = Date.now();
         }
@@ -455,8 +458,22 @@ export class EventHandlers {
         const { AuthService } = await import('./auth-service.js');
         
         if (State.currentUser) {
-            if (pos.x >= Constants.SCREEN_WIDTH / 2 - 60 && pos.x <= Constants.SCREEN_WIDTH / 2 + 60 &&
-                pos.y >= 200 && pos.y <= 240) {
+            const isEmailUser = State.currentUser.email && State.currentUser.email.includes('@platformer.local');
+            
+            if (isEmailUser && pos.x >= Constants.SCREEN_WIDTH / 2 - 80 && pos.x <= Constants.SCREEN_WIDTH / 2 + 80 &&
+                pos.y >= 180 && pos.y <= 220) {
+                const currentPassword = prompt('Enter current password:');
+                if (!currentPassword) return;
+                const newPassword = prompt('Enter new password:');
+                if (!newPassword) return;
+                const confirmPassword = prompt('Confirm new password:');
+                if (newPassword !== confirmPassword) {
+                    alert('Passwords do not match');
+                    return;
+                }
+                await AuthService.changePassword(currentPassword, newPassword);
+            } else if (pos.x >= Constants.SCREEN_WIDTH / 2 - 60 && pos.x <= Constants.SCREEN_WIDTH / 2 + 60 &&
+                pos.y >= (isEmailUser ? 235 : 200) && pos.y <= (isEmailUser ? 275 : 240)) {
                 await AuthService.signOut();
             }
         } else {
