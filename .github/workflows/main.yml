@@ -12,7 +12,7 @@ jobs:
     
     - name: Setup Butler
       run: |
-        curl -L https://broth.itch.ovh/butler/linux-amd64/LATEST/butler.zip -o butler.zip
+        curl -L https://broth.itch.zone/butler/linux-amd64/LATEST/butler.zip -o butler.zip
         unzip butler.zip
         chmod +x butler
         echo "$PWD/butler" >> $GITHUB_PATH
