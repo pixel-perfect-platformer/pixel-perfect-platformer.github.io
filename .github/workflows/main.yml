@@ -1,4 +1,4 @@
-name: Deploy Pixel Perfect Platformer (Web FIXED)
+name: Deploy Pixel Perfect Platformer (Web)
 
 on:
   push:
@@ -7,35 +7,31 @@ on:
 jobs:
   deploy-web:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 20
         cache: 'npm'
-    
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libglib2.0-dev pkg-config
-    
+
     - name: Install dependencies
       run: npm ci
-    
-    - name: Build
-      run: npm run tauri build
-      env:
-        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-    
+
+    # Adjust this step so it outputs your HTML5 build into `dist`
+    # e.g. if your build command is different, change it here
+    - name: Build web
+      run: npm run build
+
     - name: Setup Butler
       run: |
-        curl -L https://broth.itch.ovh/butler/linux-amd64LATEST/zip -o butler.zip
+        curl -L https://broth.itch.ovh/butler/linux-amd64/LATEST/butler.zip -o butler.zip
         unzip butler.zip
         chmod +x butler
         echo "$PWD/butler" >> $GITHUB_PATH
-    
+
     - name: Deploy HTML5 to itch.io
       run: butler push dist krisvih32alt/pixel-perfect-platformer:html5
       env:
