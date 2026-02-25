@@ -9,14 +9,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup Butler
+    - name: Deploy HTML5 to itch.io
       run: |
         curl -L https://broth.itch.zone/butler/linux-amd64/LATEST/butler.zip -o butler.zip
         unzip butler.zip
         chmod +x butler
-        echo "$PWD/butler" >> $GITHUB_PATH
-    
-    - name: Deploy HTML5 to itch.io
-      run: butler push . krisvih32alt/pixel-perfect-platformer:html5
+        ./butler push . krisvih32alt/pixel-perfect-platformer:html5
       env:
         BUTLER_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
