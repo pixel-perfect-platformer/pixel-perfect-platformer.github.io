@@ -1,5 +1,4 @@
 name: Deploy Pixel Perfect Platformer (Web)
-
 on:
   push:
     branches: [ main ]
