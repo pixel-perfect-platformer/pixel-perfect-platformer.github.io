@@ -120,16 +120,21 @@ export class FirebaseService {
   async saveLevelToCloud(levelIndex, levelData) {
     try {
       if (!auth.currentUser) {
-        console.warn('User not authenticated, skipping cloud save');
         return false;
       }
       const category = levelData.category || 'community';
-      const collectionName = category === 'official' ? 'official_levels' : 'levels';
-      await setDoc(doc(db, collectionName, `level_${levelIndex}`), {
-        ...levelData,
-        updatedAt: new Date(),
-        userId: auth.currentUser.uid
-      });
+      if (category === 'official') {
+        await setDoc(doc(db, 'official_levels', `level_${levelIndex}`), {
+          ...levelData,
+          updatedAt: new Date(),
+          userId: auth.currentUser.uid
+        });
+      } else {
+        await setDoc(doc(db, `users/${auth.currentUser.uid}/community_levels`, `level_${levelIndex}`), {
+          ...levelData,
+          updatedAt: new Date()
+        });
+      }
       return true;
     } catch (error) {
       console.error('Error saving level:', error);
@@ -150,6 +155,9 @@ export class FirebaseService {
 
   async getAllLevels() {
     try {
+      if (!auth.currentUser) {
+        return [];
+      }
       const levels = [];
       try {
         const officialSnapshot = await getDocs(collection(db, 'official_levels'));
@@ -160,10 +168,14 @@ export class FirebaseService {
         console.log('No official levels collection yet');
       }
       
-      const communitySnapshot = await getDocs(collection(db, 'levels'));
-      communitySnapshot.forEach((doc) => {
-        levels.push({ id: doc.id, ...doc.data(), category: doc.data().category || 'community' });
-      });
+      try {
+        const communitySnapshot = await getDocs(collection(db, `users/${auth.currentUser.uid}/community_levels`));
+        communitySnapshot.forEach((doc) => {
+          levels.push({ id: doc.id, ...doc.data(), category: 'community' });
+        });
+      } catch (e) {
+        console.log('No community levels for this user yet');
+      }
       
       return levels;
     } catch (error) {
@@ -174,8 +186,14 @@ export class FirebaseService {
 
   async deleteLevel(levelIndex, category) {
     try {
-      const collectionName = category === 'official' ? 'official_levels' : 'levels';
-      await deleteDoc(doc(db, collectionName, `level_${levelIndex}`));
+      if (!auth.currentUser) {
+        return false;
+      }
+      if (category === 'official') {
+        await deleteDoc(doc(db, 'official_levels', `level_${levelIndex}`));
+      } else {
+        await deleteDoc(doc(db, `users/${auth.currentUser.uid}/community_levels`, `level_${levelIndex}`));
+      }
       return true;
     } catch (error) {
       console.error('Error deleting level:', error);

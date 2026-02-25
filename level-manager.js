@@ -9,8 +9,12 @@ export class LevelManager {
                 State.levels[State.currentLevelIndex].blocks = this.cloneData(State.blocks);
                 State.levels[State.currentLevelIndex].texts = this.cloneData(State.texts);
             }
+            localStorage.setItem('platformer_levels', JSON.stringify(State.levels));
+            const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
             for (let i = 0; i < State.levels.length; i++) {
-                await firebaseService.saveLevelToCloud(i, State.levels[i]);
+                if (State.levels[i].category !== 'official' || isAdmin) {
+                    await firebaseService.saveLevelToCloud(i, State.levels[i]);
+                }
             }
         } catch (e) {
             console.error('Failed to save levels:', e);
@@ -59,6 +63,11 @@ export class LevelManager {
         try {
             const cloudLevels = await firebaseService.getAllLevels();
             if (cloudLevels.length > 0) {
+                cloudLevels.sort((a, b) => {
+                    const aIndex = parseInt(a.id.split('_')[1]) || 0;
+                    const bIndex = parseInt(b.id.split('_')[1]) || 0;
+                    return aIndex - bIndex;
+                });
                 State.levels = cloudLevels.map(level => ({
                     name: level.name,
                     blocks: level.blocks || [],
@@ -71,13 +80,23 @@ export class LevelManager {
                 return;
             }
         } catch (e) {
-            console.log('No cloud levels found');
+            console.log('No cloud levels found:', e);
         }
         
-        if (!State.levels || State.levels.length === 0) {
-            State.levels = [{ name: 'Level 1', blocks: [], texts: [], category: 'official', official: true }];
-            this.saveLevelsToStorage();
+        try {
+            const localData = localStorage.getItem('platformer_levels');
+            if (localData) {
+                State.levels = JSON.parse(localData);
+                this.populateLevelSelect();
+                this.loadLevel(0);
+                return;
+            }
+        } catch (e) {
+            console.log('No local levels found:', e);
         }
+        
+        State.levels = [{ name: 'Level 1', blocks: [], texts: [], category: 'community', official: false }];
+        await this.saveLevelsToStorage();
         this.populateLevelSelect();
         this.loadLevel(0);
     }

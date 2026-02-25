@@ -6,8 +6,12 @@ export class AuthService {
     static isSigningIn = false;
 
     static init() {
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             State.currentUser = user;
+            if (user) {
+                const { LevelManager } = await import('./level-manager.js');
+                await LevelManager.loadLevelsFromStorage();
+            }
         });
     }
 
@@ -19,6 +23,8 @@ export class AuthService {
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
             State.currentUser = result.user;
+            const { LevelManager } = await import('./level-manager.js');
+            await LevelManager.loadLevelsFromStorage();
             return result.user;
         } catch (error) {
             if (error.code !== 'auth/cancelled-popup-request') {
@@ -37,6 +43,8 @@ export class AuthService {
         try {
             const result = await signInWithEmailAndPassword(auth, email, password);
             State.currentUser = result.user;
+            const { LevelManager } = await import('./level-manager.js');
+            await LevelManager.loadLevelsFromStorage();
             return result.user;
         } catch (error) {
             console.error('Email sign-in error:', error);
@@ -53,6 +61,8 @@ export class AuthService {
         try {
             const result = await createUserWithEmailAndPassword(auth, email, password);
             State.currentUser = result.user;
+            const { LevelManager } = await import('./level-manager.js');
+            await LevelManager.loadLevelsFromStorage();
             return result.user;
         } catch (error) {
             console.error('Sign-up error:', error);
@@ -66,8 +76,14 @@ export class AuthService {
         if (this.isSigningIn) return;
         
         try {
+            if (State.currentUser) {
+                const { LevelManager } = await import('./level-manager.js');
+                await LevelManager.saveLevelsToStorage();
+            }
             await signOut(auth);
             State.currentUser = null;
+            const { LevelManager } = await import('./level-manager.js');
+            await LevelManager.loadLevelsFromStorage();
         } catch (error) {
             console.error('Sign-out error:', error);
             alert('Sign-out failed: ' + error.message);
