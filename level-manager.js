@@ -3,6 +3,8 @@ import Constants from './constants.js';
 import { firebaseService } from './firebase-service.js';
 
 export class LevelManager {
+    static isLoading = false;
+    
     static async saveLevelsToStorage() {
         try {
             if (State.editorMode && State.levels[State.currentLevelIndex]) {
@@ -10,10 +12,22 @@ export class LevelManager {
                 State.levels[State.currentLevelIndex].texts = this.cloneData(State.texts);
             }
             localStorage.setItem('platformer_levels', JSON.stringify(State.levels));
-            const isAdmin = State.currentUser && (State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32');
+            if (!State.currentUser) return;
+            const isAdmin = State.currentUser.email === 'krisvih32@platformer.local' || State.currentUser.displayName === 'krisvih32';
+            const existingLevels = await firebaseService.getAllLevels();
+            const existingIds = new Set(existingLevels.map(l => l.id));
             for (let i = 0; i < State.levels.length; i++) {
+                const levelId = `level_${i}`;
                 if (State.levels[i].category !== 'official' || isAdmin) {
                     await firebaseService.saveLevelToCloud(i, State.levels[i]);
+                    existingIds.delete(levelId);
+                }
+            }
+            for (const oldId of existingIds) {
+                const index = parseInt(oldId.split('_')[1]);
+                if (index >= State.levels.length) {
+                    const category = existingLevels.find(l => l.id === oldId)?.category || 'community';
+                    await firebaseService.deleteLevel(index, category);
                 }
             }
         } catch (e) {
@@ -60,15 +74,26 @@ export class LevelManager {
     }
 
     static async loadLevelsFromStorage() {
+        if (this.isLoading) return;
+        this.isLoading = true;
+        
         try {
             const cloudLevels = await firebaseService.getAllLevels();
             if (cloudLevels.length > 0) {
+                const seen = new Set();
+                const uniqueLevels = [];
                 cloudLevels.sort((a, b) => {
                     const aIndex = parseInt(a.id.split('_')[1]) || 0;
                     const bIndex = parseInt(b.id.split('_')[1]) || 0;
                     return aIndex - bIndex;
                 });
-                State.levels = cloudLevels.map(level => ({
+                for (const level of cloudLevels) {
+                    if (!seen.has(level.id)) {
+                        seen.add(level.id);
+                        uniqueLevels.push(level);
+                    }
+                }
+                State.levels = uniqueLevels.map(level => ({
                     name: level.name,
                     blocks: level.blocks || [],
                     texts: level.texts || [],
@@ -77,6 +102,7 @@ export class LevelManager {
                 }));
                 this.populateLevelSelect();
                 this.loadLevel(0);
+                this.isLoading = false;
                 return;
             }
         } catch (e) {
@@ -89,6 +115,7 @@ export class LevelManager {
                 State.levels = JSON.parse(localData);
                 this.populateLevelSelect();
                 this.loadLevel(0);
+                this.isLoading = false;
                 return;
             }
         } catch (e) {
@@ -96,9 +123,9 @@ export class LevelManager {
         }
         
         State.levels = [{ name: 'Level 1', blocks: [], texts: [], category: 'community', official: false }];
-        await this.saveLevelsToStorage();
         this.populateLevelSelect();
         this.loadLevel(0);
+        this.isLoading = false;
     }
 
     static populateLevelSelect() {
