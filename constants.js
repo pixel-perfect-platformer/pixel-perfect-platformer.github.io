@@ -16,6 +16,7 @@ class Constants {
     static editorBtn = document.getElementById('editorBtn');
     static clearBtn = document.getElementById('clearBtn');
     static saveBtn = document.getElementById('saveBtn');
+    static publishBtn = document.getElementById('publishBtn');
     static loadBtn = document.getElementById('loadBtn');
     static levelSelect = document.getElementById('levelSelect');
     static newLevelBtn = document.getElementById('newLevelBtn');
@@ -35,6 +36,9 @@ class Constants {
     static editorHint = document.getElementById('editorHint');
     static titleMusic = document.getElementById('titleMusic');
 
+    static githubImg = new Image();
+    static openLockImg = new Image();
+    static closedLockImg = new Image();
 
     static animationDuration = 1000; // 1 seconds
 }

@@ -3,7 +3,7 @@ class State {
     static blocks = [];
     static isRunning = false;
     static editorMode = false;
-    static showTitleScreen = true;
+    static showTitleScreen = false;
     static showCustomizationScreen = false;
     static pressedTitleButton = null;
     static titleButtonIsDown = false;
@@ -19,6 +19,10 @@ class State {
     static texts = []; // placed text objects {x,y,text}
     static levelCompleted = false;
     static showHitboxes = false;
+    // Input state
+    static leftPressed = false;
+    static rightPressed = false;
+    static jumpBuffered = false;
     // Level stats
     static levelStartTime = 0;
     static levelCompletionTime = 0;
@@ -53,5 +57,33 @@ class State {
     static currentPlayerColor = '#000000';
     static currentPlayerOuterColor = '#000000';
     static customizeColorMode = 'inner'; // 'inner' or 'outer'
+    static showLevelMenu = false;
+    static showLevelsScreen = false;
+    static selectingForEditor = false;
+    static currentLevelView = 0;
+    static levelCategory = 'official'; // 'official' or 'community'
+    static levelHoverLeft = false;
+    static levelHoverRight = false;
+    static levelSlideOffset = 0;
+    static levelSlideTarget = 0;
+    static levelSlideVelocity = 0;
+    static isLevelAnimating = false;
+    static mouseDistanceToArrow = 999;
+    static isAnimatingLevelStart = false;
+    static animationStartTimeLevelStart = 0;
+    static backFromLevel = false;
+    static levelCompletions = {}; // Track which levels have been completed
+    static currentUser = null; // Current logged in user
+    static showCreditsScreen = false;
+    static isAnimatingCredits = false;
+    static animationStartTimeCredits = 0;
+    static isAnimatingSignIn = false;
+    static animationStartTimeSignIn = 0;
+    static showSignInScreen = true;
+    static isSignInForced = true; // True when user must sign in (no back button)
+    static levelListPage = 0;
+    // Leaderboard and replay states
+    static showLeaderboardScreen = false;
+    static showReplayScreen = false;
 }
 export default State;
