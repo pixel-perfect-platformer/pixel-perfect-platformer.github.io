@@ -291,9 +291,8 @@ export class EventHandlers {
         } else if (!State.editorMode && State.levels.length > 1) {
             this.handleLevelSwitcherClick(pos);
         }
-    }uttonIsDown = true;
-            }
-        } else if (State.showCompletionScreen) {
+    
+         else if (State.showCompletionScreen) {
             this.handleCompletionClick();
         } else if (State.showDeathScreen) {
             this.handleDeathClick();
@@ -316,9 +315,7 @@ export class EventHandlers {
         } else if (!State.editorMode && State.levels.length > 1) {
             this.handleLevelSwitcherClick(pos);
         }
-    }uttonIsDown = true;
-            }
-        } else if (State.showCompletionScreen) {
+         else if (State.showCompletionScreen) {
             this.handleCompletionClick();
         } else if (State.showDeathScreen) {
             this.handleDeathClick();
