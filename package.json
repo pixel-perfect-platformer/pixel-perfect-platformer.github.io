@@ -1,0 +1,17 @@
+{
+  "name": "pixel-perfect-platformer.github.io",
+  "version": "0.4.0",
+  "description": "Added the itch.io publish feature",
+  "homepage": "https://github.com/pixel-perfect-platformer/pixel-perfect-platformer.github.io#readme",
+  "bugs": {
+    "url": "https://github.com/pixel-perfect-platformer/pixel-perfect-platformer.github.io/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pixel-perfect-platformer/pixel-perfect-platformer.github.io.git"
+  },
+  "license": "UNLICENSED",
+  "author": "Vihaan Krishnan",
+  "type": "commonjs",
+  "main": "main.js"
+}

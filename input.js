@@ -164,14 +164,11 @@ class Input {
             }
             saveCurrentLevel();
         });
-        
         // Block type selector
         Constants.blockTypeSelect.addEventListener('change', (e) => {
             State.currentBlockType = e.target.value;
         });
 
 
-
-    }
-}
+    }}
 export default Input;

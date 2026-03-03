@@ -177,6 +177,23 @@ export class FirebaseService {
         console.log('No community levels for this user yet');
       }
       
+      try {
+        const publishedSnapshot = await getDocs(collection(db, 'published_levels'));
+        publishedSnapshot.forEach((doc) => {
+          const publishedLevel = { id: doc.id, ...doc.data(), category: 'community' };
+          // Only add if not already in levels (avoid duplicates)
+          const exists = levels.some(level => 
+            level.name === publishedLevel.name && 
+            level.authorId === publishedLevel.authorId
+          );
+          if (!exists) {
+            levels.push(publishedLevel);
+          }
+        });
+      } catch (e) {
+        console.log('No published levels yet');
+      }
+      
       return levels;
     } catch (error) {
       console.error('Error loading levels:', error);
@@ -227,16 +244,44 @@ export class FirebaseService {
 
   async publishLevel(levelIndex, levelData) {
     try {
-      await setDoc(doc(db, 'published_levels', `level_${levelIndex}_${Date.now()}`), {
+      // Verify level has required components
+      if (!levelData.blocks || levelData.blocks.length === 0) {
+        throw new Error('Level must have blocks');
+      }
+      
+      // Check for end block
+      const hasEndBlock = levelData.blocks.some(block => block.type === 'end');
+      if (!hasEndBlock) {
+        throw new Error('Level must have an end block');
+      }
+      
+      // Check if level has been completed by the author
+      const completionKey = `level_${levelIndex}`;
+      const levelCompletions = JSON.parse(localStorage.getItem('platformer_completions') || '{}');
+      if (!levelCompletions[completionKey]) {
+        throw new Error('You must complete the level before publishing it');
+      }
+      
+      // Add author info
+      const authorName = auth.currentUser.email ? 
+        auth.currentUser.email.replace('@platformer.local', '') : 
+        (auth.currentUser.displayName || 'Anonymous');
+      
+      const publishData = {
         ...levelData,
         publishedAt: new Date(),
         levelIndex: levelIndex,
-        isPublished: true
-      });
+        isPublished: true,
+        author: authorName,
+        authorId: auth.currentUser.uid,
+        verified: true
+      };
+      
+      await setDoc(doc(db, 'published_levels', `level_${levelIndex}_${Date.now()}`), publishData);
       return true;
     } catch (error) {
       console.error('Error publishing level:', error);
-      return false;
+      throw error;
     }
   }
 

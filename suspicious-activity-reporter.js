@@ -2,4 +2,62 @@
 import { firebaseService } from './firebase-service.js';
 import State from './state.js';
 
-export class SuspiciousActivityReporter {\n    static async reportSuspiciousActivity(type, details) {\n        if (!State.currentUser) return;\n        \n        try {\n            const db = firebaseService.db;\n            const reportsRef = db.ref('suspicious_activity');\n            \n            const report = {\n                uid: State.currentUser.uid,\n                username: State.currentUser.email?.replace('@platformer.local', '') || 'Anonymous',\n                type,\n                details,\n                timestamp: Date.now(),\n                userAgent: navigator.userAgent,\n                url: window.location.href\n            };\n            \n            await reportsRef.push(report);\n            console.warn(`Suspicious activity reported: ${type}`, details);\n        } catch (error) {\n            console.error('Failed to report suspicious activity:', error);\n        }\n    }\n    \n    static reportInvalidScore(scoreData, validationErrors) {\n        this.reportSuspiciousActivity('invalid_score_submission', {\n            scoreData,\n            validationErrors,\n            levelIndex: scoreData.levelIndex\n        });\n    }\n    \n    static reportSuspiciousPatterns(patterns, replayData) {\n        this.reportSuspiciousActivity('suspicious_input_patterns', {\n            patterns,\n            replayLength: replayData.length,\n            levelIndex: State.currentLevelIndex\n        });\n    }\n    \n    static reportPhysicsViolation(violation, playerState) {\n        this.reportSuspiciousActivity('physics_violation', {\n            violation,\n            playerState,\n            levelIndex: State.currentLevelIndex\n        });\n    }\n    \n    static reportTimingAnomaly(expectedTime, actualTime, tolerance) {\n        this.reportSuspiciousActivity('timing_anomaly', {\n            expectedTime,\n            actualTime,\n            difference: Math.abs(expectedTime - actualTime),\n            tolerance,\n            levelIndex: State.currentLevelIndex\n        });\n    }\n}
+export class SuspiciousActivityReporter {
+    static async reportSuspiciousActivity(type, details) {
+        if (!State.currentUser) return;
+        
+        try {
+            const { collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js');
+            const { db } = await import('./firebase-config.js');
+            
+            const report = {
+                uid: State.currentUser.uid,
+                username: State.currentUser.email?.replace('@platformer.local', '') || 'Anonymous',
+                type,
+                details,
+                timestamp: Date.now(),
+                userAgent: navigator.userAgent,
+                url: window.location.href
+            };
+            
+            await addDoc(collection(db, 'suspicious_activity'), report);
+            console.warn(`Suspicious activity reported: ${type}`, details);
+        } catch (error) {
+            console.error('Failed to report suspicious activity:', error);
+        }
+    }
+    
+    static reportInvalidScore(scoreData, validationErrors) {
+        this.reportSuspiciousActivity('invalid_score_submission', {
+            scoreData,
+            validationErrors,
+            levelIndex: scoreData.levelIndex
+        });
+    }
+    
+    static reportSuspiciousPatterns(patterns, replayData) {
+        this.reportSuspiciousActivity('suspicious_input_patterns', {
+            patterns,
+            replayLength: replayData.length,
+            levelIndex: State.currentLevelIndex
+        });
+    }
+    
+    static reportPhysicsViolation(violation, playerState) {
+        this.reportSuspiciousActivity('physics_violation', {
+            violation,
+            playerState,
+            levelIndex: State.currentLevelIndex
+        });
+    }
+    
+    static reportTimingAnomaly(expectedTime, actualTime, tolerance) {
+        this.reportSuspiciousActivity('timing_anomaly', {
+            expectedTime,
+            actualTime,
+            difference: Math.abs(expectedTime - actualTime),
+            tolerance,
+            levelIndex: State.currentLevelIndex
+        });
+    }
+}

@@ -1,188 +1,102 @@
 import State from './state.js';
 import Constants from './constants.js';
-import { GameRenderer } from './game-renderer.js';
-import { LevelEditor } from './level-editor.js';
-import { ReplayRecorder } from './replay-recorder.js';
+import { LeaderboardUI } from './leaderboard-ui.js';
 import { ReplayPlayer } from './replay-player.js';
-import { ReplayManager } from './replay-manager.js';
 
 export class EventHandlers {
+    static keyMap = {
+        up: ['ArrowUp', 'KeyW', 'Space'],
+        left: ['ArrowLeft', 'KeyA'],
+        right: ['ArrowRight', 'KeyD']
+    };
+
     static setupKeyboardEvents() {
-        this.init();
-    }
-
-    static init() {
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
-        document.addEventListener('keyup', this.handleKeyUp.bind(this));
+        let leftKeyPressed = false;
+        let rightKeyPressed = false;
         
-        // Canvas click handler
-        const canvas = document.getElementById('gameCanvas');
-        if (canvas) {
-            canvas.addEventListener('click', this.handleCanvasClick.bind(this));
-        }
-    }
-
-    static handleKeyDown(event) {
-        if (State.showReplayScreen) {
-            this.handleReplayControls(event);
-            return;
-        }
-        
-        if (State.editorMode) {
-            this.handleEditorKeys(event);
-        } else {
-            this.handleGameKeys(event);
-        }
-    }
-
-    static handleKeyUp(event) {
-        if (State.showReplayScreen) return;
-        
-        if (!State.editorMode) {
-            this.handleGameKeyUp(event);
-        }
-    }
-
-    static handleReplayControls(event) {
-        switch (event.code) {
-            case 'Space':
-                event.preventDefault();
-                ReplayPlayer.pauseReplay();
-                break;
-            case 'ArrowLeft':
-                if (ReplayPlayer.replayData) {
-                    const currentPercent = ReplayPlayer.currentTime / ReplayPlayer.replayData.duration;
-                    ReplayPlayer.seekTo(Math.max(0, currentPercent - 0.1));
+        document.addEventListener('keydown', (e) => {
+            const { up, left, right } = this.keyMap;
+            
+            if (up.includes(e.code)) {
+                State.upPressed = State.jumpBuffered = true;
+                if (State.showTitleScreen && e.code === 'Space') {
+                    e.preventDefault();
+                    State.showTitleScreen = false;
+                    State.isRunning = true;
                 }
-                break;
-            case 'ArrowRight':
-                if (ReplayPlayer.replayData) {
-                    const currentPercent = ReplayPlayer.currentTime / ReplayPlayer.replayData.duration;
-                    ReplayPlayer.seekTo(Math.min(1, currentPercent + 0.1));
-                }
-                break;
-            case 'Equal':
-            case 'NumpadAdd':
-                ReplayPlayer.setSpeed(ReplayPlayer.speed * 1.25);
-                break;
-            case 'Minus':
-            case 'NumpadSubtract':
-                ReplayPlayer.setSpeed(ReplayPlayer.speed / 1.25);
-                break;
-            case 'Escape':
-                ReplayPlayer.stopReplay();
-                State.showReplayScreen = false;
-                State.showLevelsScreen = true;
-                break;
-        }
-    }
-
-    static handleEditorKeys(event) {
-        switch (event.code) {
-            case 'Escape':
-                State.editorMode = false;
-                break;
-            case 'KeyS':
-                if (event.ctrlKey) {
-                    event.preventDefault();
-                    LevelEditor.saveLevel();
-                }
-                break;
-            case 'KeyL':
-                if (event.ctrlKey) {
-                    event.preventDefault();
-                    LevelEditor.loadLevel();
-                }
-                break;
-            case 'Delete':
-            case 'Backspace':
-                LevelEditor.deleteSelected();
-                break;
-        }
-    }
-
-    static handleGameKeys(event) {
-        switch (event.code) {
-            case 'Space':
-            case 'ArrowUp':
-            case 'KeyW':
-                event.preventDefault();
-                State.jumpBuffered = true;
-                
-                // Record input for replay
-                if (ReplayRecorder.isRecording) {
-                    ReplayRecorder.recordInput({
-                        type: 'keydown',
-                        key: event.code,
-                        t: Date.now() - State.levelStartTime
-                    });
-                }
-                break;
-            case 'ArrowLeft':
-            case 'KeyA':
+            } else if (left.includes(e.code)) {
                 State.leftPressed = true;
-                if (ReplayRecorder.isRecording) {
-                    ReplayRecorder.recordInput({
-                        type: 'keydown',
-                        key: event.code,
-                        t: Date.now() - State.levelStartTime
-                    });
+                if (State.showLevelsScreen && !leftKeyPressed) {
+                    leftKeyPressed = true;
+                    const filteredLevels = State.levels.filter(l => (l.category || 'official') === State.levelCategory);
+                    if (filteredLevels.length > 0) {
+                        State.levelSlideTarget = 300;
+                        State.isLevelAnimating = true;
+                        setTimeout(() => {
+                            State.currentLevelView = (State.currentLevelView - 1 + filteredLevels.length) % filteredLevels.length;
+                            State.levelSlideOffset = -300;
+                            State.levelSlideTarget = 0;
+                        }, 300);
+                    }
                 }
-                break;
-            case 'ArrowRight':
-            case 'KeyD':
+            } else if (right.includes(e.code)) {
                 State.rightPressed = true;
-                if (ReplayRecorder.isRecording) {
-                    ReplayRecorder.recordInput({
-                        type: 'keydown',
-                        key: event.code,
-                        t: Date.now() - State.levelStartTime
-                    });
+                if (State.showLevelsScreen && !rightKeyPressed) {
+                    rightKeyPressed = true;
+                    const filteredLevels = State.levels.filter(l => (l.category || 'official') === State.levelCategory);
+                    if (filteredLevels.length > 0) {
+                        State.levelSlideTarget = -300;
+                        State.isLevelAnimating = true;
+                        setTimeout(() => {
+                            State.currentLevelView = (State.currentLevelView + 1) % filteredLevels.length;
+                            State.levelSlideOffset = 300;
+                            State.levelSlideTarget = 0;
+                        }, 300);
+                    }
                 }
-                break;
-            case 'KeyR':
-                if (window.LevelManager) window.LevelManager.loadLevel(State.currentLevelIndex);
-                break;
-            case 'KeyE':
-                State.editorMode = true;
-                break;
-            case 'KeyP':
-                State.isRunning = !State.isRunning;
-                break;
-        }
-    }
+            } else if (e.code === 'Escape' && !State.showTitleScreen && !State.isAnimating && !State.isAnimatingEditor && !State.isAnimatingBack) {
+                if (State.showReplayScreen) {
+                    ReplayPlayer.stopReplay();
+                } else if (State.showLeaderboardScreen) {
+                    LeaderboardUI.hide();
+                } else {
+                    State.isAnimatingBack = true;
+                    State.animationStartTimeBack = Date.now();
+                    State.backFromLevel = State.isRunning || State.editorMode || State.showCompletionScreen || State.showDeathScreen;
+                }
+            }
+        });
 
-    static handleGameKeyUp(event) {
-        switch (event.code) {
-            case 'ArrowLeft':
-            case 'KeyA':
+        document.addEventListener('keyup', (e) => {
+            const { up, left, right } = this.keyMap;
+            
+            if (up.includes(e.code)) {
+                State.upPressed = State.jumpBuffered = false;
+                if (State.showReplayScreen && e.code === 'Space') {
+                    ReplayPlayer.isPlaying = !ReplayPlayer.isPlaying;
+                }
+            } else if (left.includes(e.code)) {
                 State.leftPressed = false;
-                if (ReplayRecorder.isRecording) {
-                    ReplayRecorder.recordInput({
-                        type: 'keyup',
-                        key: event.code,
-                        t: Date.now() - State.levelStartTime
-                    });
+                leftKeyPressed = false;
+                if (State.showReplayScreen) {
+                    ReplayPlayer.seekTo(Math.max(0, ReplayPlayer.currentTime / ReplayPlayer.replayData?.duration - 0.1));
                 }
-                break;
-            case 'ArrowRight':
-            case 'KeyD':
+            } else if (right.includes(e.code)) {
                 State.rightPressed = false;
-                if (ReplayRecorder.isRecording) {
-                    ReplayRecorder.recordInput({
-                        type: 'keyup',
-                        key: event.code,
-                        t: Date.now() - State.levelStartTime
-                    });
+                rightKeyPressed = false;
+                if (State.showReplayScreen) {
+                    ReplayPlayer.seekTo(Math.min(1, ReplayPlayer.currentTime / ReplayPlayer.replayData?.duration + 0.1));
                 }
-                break;
-        }
-    }
-
-    static handleCanvasClick(event) {
-        if (State.editorMode) {
-            LevelEditor.handleClick(event);
-        }
+            } else if (e.code === 'Equal' || e.code === 'NumpadAdd') {
+                if (State.showReplayScreen) {
+                    ReplayPlayer.setSpeed(ReplayPlayer.speed * 1.25);
+                }
+            } else if (e.code === 'Minus' || e.code === 'NumpadSubtract') {
+                if (State.showReplayScreen) {
+                    ReplayPlayer.setSpeed(ReplayPlayer.speed * 0.8);
+                }
+            }
+        });
     }
 
     static setupBrowserEvents() {
@@ -237,6 +151,7 @@ export class EventHandlers {
             ['mousedown', 'handleMouseDown'],
             ['mousemove', 'handleMouseMove'], 
             ['mouseup', 'handleMouseUp'],
+            ['wheel', 'handleWheel', { passive: false }],
             ['touchstart', 'handleTouchStart', { passive: false }],
             ['touchend', 'handleTouchEnd', { passive: false }],
             ['contextmenu', 'handleContextMenu'],
@@ -251,6 +166,16 @@ export class EventHandlers {
     static handleMouseDown(e) {
         if (e.button !== 0) return;
         const pos = this.getGameCoords(e);
+
+        if (State.showLeaderboardScreen) {
+            LeaderboardUI.handleClick(pos.x, pos.y);
+            return;
+        }
+
+        if (State.showReplayScreen) {
+            this.handleReplayClick(pos);
+            return;
+        }
 
         if (State.showLevelsScreen) {
             if (this.isBackArrowClick(pos)) {
@@ -269,54 +194,7 @@ export class EventHandlers {
                 State.titleButtonIsDown = true;
             }
         } else if (State.showCompletionScreen) {
-            this.handleCompletionClick();
-        } else if (State.showDeathScreen) {
-            this.handleDeathClick();
-        } else if (State.showCustomizationScreen) {
-            if (this.isBackArrowClick(pos)) {
-                this.triggerBackAnimation();
-            } else {
-                EventHandlers.handleCustomizationClick(pos);
-            }
-        } else if (State.showCreditsScreen || State.showSignInScreen) {
-            if (this.isBackArrowClick(pos)) {
-                this.triggerBackAnimation();
-            } else if (State.showSignInScreen) {
-                EventHandlers.handleSignInClick(pos);
-            }
-        } else if (this.isBackArrowClick(pos)) {
-            this.triggerBackAnimation();
-        } else if (State.editorMode) {
-            this.handleEditorClick(pos);
-        } else if (!State.editorMode && State.levels.length > 1) {
-            this.handleLevelSwitcherClick(pos);
-        }
-    
-         else if (State.showCompletionScreen) {
-            this.handleCompletionClick();
-        } else if (State.showDeathScreen) {
-            this.handleDeathClick();
-        } else if (State.showCustomizationScreen) {
-            if (this.isBackArrowClick(pos)) {
-                this.triggerBackAnimation();
-            } else {
-                EventHandlers.handleCustomizationClick(pos);
-            }
-        } else if (State.showCreditsScreen || State.showSignInScreen) {
-            if (this.isBackArrowClick(pos)) {
-                this.triggerBackAnimation();
-            } else if (State.showSignInScreen) {
-                EventHandlers.handleSignInClick(pos);
-            }
-        } else if (this.isBackArrowClick(pos)) {
-            this.triggerBackAnimation();
-        } else if (State.editorMode) {
-            this.handleEditorClick(pos);
-        } else if (!State.editorMode && State.levels.length > 1) {
-            this.handleLevelSwitcherClick(pos);
-        }
-         else if (State.showCompletionScreen) {
-            this.handleCompletionClick();
+            this.handleCompletionClick(pos);
         } else if (State.showDeathScreen) {
             this.handleDeathClick();
         } else if (State.showCustomizationScreen) {
@@ -341,9 +219,15 @@ export class EventHandlers {
     }
     
     static handleMouseMove(e) {
+        const pos = this.getGameCoords(e);
+        
+        if (State.showLeaderboardScreen) {
+            LeaderboardUI.handleMouseMove(pos.x, pos.y);
+            return;
+        }
+        
         if (!State.showLevelsScreen) return;
         
-        const pos = this.getGameCoords(e);
         const arrowY = Constants.SCREEN_HEIGHT / 2;
         const arrowSize = 40;
         
@@ -431,6 +315,13 @@ export class EventHandlers {
         }
     }
     
+    static handleWheel(e) {
+        if (State.showLeaderboardScreen) {
+            e.preventDefault();
+            LeaderboardUI.handleScroll(e.deltaY);
+        }
+    }
+    
     static handleTouchStart(e) {}
     static handleTouchEnd(e) {}
     static handleContextMenu(e) { e.preventDefault(); }
@@ -498,7 +389,33 @@ export class EventHandlers {
         }
     }
     
-    static handleCompletionClick() {
+    static handleCompletionClick(pos) {
+        // Check for leaderboard button
+        const leaderboardBtnX = Constants.SCREEN_WIDTH / 2 - 120;
+        const leaderboardBtnY = Constants.SCREEN_HEIGHT / 2 + 80;
+        const btnWidth = 100;
+        const btnHeight = 30;
+        
+        if (pos.x >= leaderboardBtnX && pos.x <= leaderboardBtnX + btnWidth &&
+            pos.y >= leaderboardBtnY && pos.y <= leaderboardBtnY + btnHeight) {
+            State.showCompletionScreen = false;
+            LeaderboardUI.showLeaderboard(State.currentLevelIndex);
+            return;
+        }
+        
+        // Check for next level button
+        const nextBtnX = Constants.SCREEN_WIDTH / 2 + 20;
+        if (pos.x >= nextBtnX && pos.x <= nextBtnX + btnWidth &&
+            pos.y >= leaderboardBtnY && pos.y <= leaderboardBtnY + btnHeight &&
+            State.currentLevelIndex < State.levels.length - 1) {
+            State.showCompletionScreen = false;
+            State.levelCompleted = false;
+            window.LevelManager?.loadLevel(State.currentLevelIndex + 1);
+            State.isRunning = true;
+            return;
+        }
+        
+        // Default click behavior - return to level select
         State.showCompletionScreen = false;
         State.levelCompleted = false;
         State.showLevelsScreen = true;
@@ -699,6 +616,39 @@ export class EventHandlers {
                 console.error('Publish error:', error);
                 alert('Error publishing level: ' + error.message);
             }
+        }
+    }
+    
+    static handleReplayClick(pos) {
+        // Back button
+        if (pos.x >= 10 && pos.x <= 70 && pos.y >= 10 && pos.y <= 50) {
+            ReplayPlayer.stopReplay();
+            return;
+        }
+        
+        // Progress bar seeking
+        const barY = Constants.SCREEN_HEIGHT - 60;
+        const barWidth = Constants.SCREEN_WIDTH - 100;
+        const barX = 50;
+        
+        if (pos.x >= barX && pos.x <= barX + barWidth &&
+            pos.y >= barY && pos.y <= barY + 8) {
+            const progress = (pos.x - barX) / barWidth;
+            ReplayPlayer.seekTo(progress);
+            return;
+        }
+        
+        // Speed controls (click on speed indicator)
+        const speedX = Constants.SCREEN_WIDTH - 60;
+        const speedY = barY - 25;
+        
+        if (pos.x >= speedX && pos.x <= speedX + 40 &&
+            pos.y >= speedY && pos.y <= speedY + 20) {
+            // Cycle through speeds: 0.25x, 0.5x, 1x, 2x, 4x
+            const speeds = [0.25, 0.5, 1, 2, 4];
+            const currentIndex = speeds.indexOf(ReplayPlayer.speed);
+            const nextIndex = (currentIndex + 1) % speeds.length;
+            ReplayPlayer.setSpeed(speeds[nextIndex]);
         }
     }
     

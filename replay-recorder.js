@@ -1,27 +1,27 @@
 import State from './state.js';
 
 export class ReplayRecorder {
+    static isRecording = false;
     static inputs = [];
     static startTime = 0;
     static frameCount = 0;
     static lastFrameTime = 0;
 
     static start() {
+        this.isRecording = true;
         this.inputs = [];
         this.startTime = Date.now();
         this.frameCount = 0;
         this.lastFrameTime = this.startTime;
     }
 
-    static recordInput(type, value) {
+    static recordInput(inputData) {
         if (!State.isRunning) return;
         
-        const currentTime = Date.now();
         this.inputs.push({
-            t: currentTime - this.startTime,
-            type,
-            value,
-            frame: this.frameCount
+            t: inputData.t,
+            type: inputData.type,
+            key: inputData.key
         });
     }
 
@@ -34,6 +34,7 @@ export class ReplayRecorder {
     }
 
     static getReplay() {
+        this.isRecording = false;
         const duration = Date.now() - this.startTime;
         const avgFrameTime = this.frameCount > 0 ? duration / this.frameCount : 0;
         

@@ -112,17 +112,41 @@ export class UIHelpers {
         this.drawBlocks(ctx);
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(0, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);
+        
+        // Title
         ctx.fillStyle = '#00ff00';
         ctx.font = 'bold 32px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('Level Complete!', Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 - 60);
+        ctx.fillText('Level Complete!', Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 - 80);
+        
+        // Stats
         ctx.fillStyle = '#ffffff';
         ctx.font = '20px Arial';
-        ctx.fillText(`Jumps: ${State.jumpCount}`, Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 - 10);
-        ctx.fillText(`Time: ${State.completionTime}s`, Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 + 20);
-        ctx.fillStyle = '#aaaaaa';
+        ctx.fillText(`Jumps: ${State.jumpCount}`, Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 - 30);
+        ctx.fillText(`Time: ${State.completionTime}s`, Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2);
+        
+        // Buttons
+        const buttonY = Constants.SCREEN_HEIGHT / 2 + 50;
+        const buttonWidth = 120;
+        const buttonHeight = 35;
+        
+        // Continue button
+        ctx.fillStyle = '#28a745';
+        ctx.fillRect(Constants.SCREEN_WIDTH / 2 - buttonWidth - 10, buttonY, buttonWidth, buttonHeight);
+        ctx.fillStyle = '#ffffff';
         ctx.font = '16px Arial';
-        ctx.fillText('Click to continue', Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 + 60);
+        ctx.fillText('Continue', Constants.SCREEN_WIDTH / 2 - buttonWidth / 2 - 10, buttonY + 22);
+        
+        // Leaderboard button
+        ctx.fillStyle = '#007bff';
+        ctx.fillRect(Constants.SCREEN_WIDTH / 2 + 10, buttonY, buttonWidth, buttonHeight);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('Leaderboard', Constants.SCREEN_WIDTH / 2 + buttonWidth / 2 + 10, buttonY + 22);
+        
+        // Instructions
+        ctx.fillStyle = '#aaaaaa';
+        ctx.font = '14px Arial';
+        ctx.fillText('Click a button to proceed', Constants.SCREEN_WIDTH / 2, buttonY + 60);
     }
     
     static drawDeathScreen(ctx) {
