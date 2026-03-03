@@ -18,6 +18,7 @@ class Player {
         this.max_speed = 12;
         this.gravity = 0.8;
         this.onGround = false;
+        this.coyoteTime = 0;
     }
 
     update() {
@@ -83,18 +84,26 @@ class Player {
         this.y = newY;
         this.onGround = landed;
 
-        // Reset jumpUsed when landing, so next press-hold can jump
-        if (landed) Input.jumpUsed = false;
+        // Coyote time: grace period after leaving ground
+        if (landed) {
+            this.coyoteTime = 6;
+        } else if (this.coyoteTime > 0) {
+            this.coyoteTime--;
+        }
 
-        // If player is holding jump and the player's Y is not changing (stable),
-        // trigger a jump (buffered). Prevent repeated jumps while the key remains held.
+        // Check if player Y is stable
         const yDelta = Math.abs(newY - oldY);
-        if (State.jumpBuffered && !Input.jumpUsed && yDelta === 0) {
+        
+        // When stable, check if jump button is pressed
+        if (yDelta === 0 && State.jumpBuffered && !Input.jumpUsed) {
             this.vertical_speed = -10;
             Input.jumpUsed = true;
             this.onGround = false;
             State.jumpCount++;
             if (window.ReplayRecorder) window.ReplayRecorder.recordInput('jump', Date.now());
+        } else if (yDelta === 0 && this.onGround && Input.jumpUsed) {
+            // Reset after checking jump, so next frame can jump if button still held
+            Input.jumpUsed = false;
         }
 
         // Apply friction: reduce lateral speed when no input

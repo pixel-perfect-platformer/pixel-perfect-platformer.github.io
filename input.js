@@ -12,6 +12,10 @@ class Input {
     constructor() {
         document.addEventListener('keydown', (e) => {
             if (e.code == 'ArrowUp' || e.code == 'KeyW' || e.code == 'Space') {
+                const wasBuffered = State.jumpBuffered;
+                if (!wasBuffered) {
+                    Input.jumpUsed = false;
+                }
                 State.upPressed = true;
                 State.jumpBuffered = true;
                 // If on title screen, Space starts the game
@@ -47,7 +51,6 @@ class Input {
             if (e.code == 'ArrowUp' || e.code == 'KeyW' || e.code == 'Space') {
                 State.upPressed = false;
                 State.jumpBuffered = false;
-                Input.jumpUsed = false; // allow next press to jump
             } else if (e.code == 'ArrowLeft' || e.code == 'KeyA') {
                 State.leftPressed = false;
             } else if (e.code == 'ArrowRight' || e.code == 'KeyD') {
