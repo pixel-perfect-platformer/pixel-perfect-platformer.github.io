@@ -7,6 +7,8 @@ import { UIHelpers } from './ui-helpers.js';
 import { LevelManager } from './level-manager.js';
 import { AuthService } from './auth-service.js';
 import { ReplayRecorder } from './replay-recorder.js';
+import { ReplayPlayer } from './replay-player.js';
+import { LeaderboardUI } from './leaderboard-ui.js';
 
 let canvas = new Canvas()
 let player = new Player()
@@ -15,6 +17,8 @@ let player = new Player()
 window.player = player;
 window.LevelManager = LevelManager;
 window.ReplayRecorder = ReplayRecorder;
+window.ReplayPlayer = ReplayPlayer;
+window.LeaderboardUI = LeaderboardUI;
 
 // Load images
 Constants.githubImg.src = 'github.png';
@@ -49,6 +53,12 @@ function gameLoop(time) {
         UIHelpers.drawSignInScreen(canvas.ctx);
     } else if (State.showLevelsScreen) {
         UIHelpers.drawLevelsScreen(canvas.ctx);
+    } else if (State.showLeaderboardScreen) {
+        LeaderboardUI.draw(canvas.ctx);
+    } else if (State.showReplayScreen) {
+        UIHelpers.drawBlocks(canvas.ctx);
+        ReplayPlayer.update();
+        ReplayPlayer.draw(canvas.ctx);
     } else if (State.showCompletionScreen) {
         UIHelpers.drawCompletionScreen(canvas.ctx);
     } else if (State.showDeathScreen) {

@@ -282,31 +282,7 @@ export class UIScreens {
         canvas.ctx.globalAlpha = 1;
     }
 
-    static drawCreditsScreen(ctx, canvas) {
-        const time = Date.now() * 0.001;
-        const gradient = canvas.ctx.createLinearGradient(0, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);
-        gradient.addColorStop(0, '#1a1a2e');
-        gradient.addColorStop(0.5, '#16213e');
-        gradient.addColorStop(1, '#0f3460');
-        canvas.ctx.fillStyle = gradient;
-        canvas.ctx.fillRect(0, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);
-        UIScreens.animateBackArrow(ctx, canvas, { value: State.isAnimatingBack }, { value: State.animationStartTimeBack });
-        canvas.ctx.save();
-        canvas.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-        canvas.ctx.shadowBlur = 10;
-        canvas.ctx.shadowOffsetY = 3;
-        canvas.ctx.fillStyle = '#ffd700';
-        canvas.ctx.font = 'bold 32px Arial';
-        canvas.ctx.textAlign = 'center';
-        canvas.ctx.fillText('Credits', Constants.SCREEN_WIDTH / 2, 60);
-        canvas.ctx.restore();
-        const credits = ['Game Developer: Vihaan Krishnan', 'Title Screen Composer: Scott Joplin', 'Title Screen Performer: IE', 'Engine: HTML5 Canvas', 'First player: Tejas Deepak', 'Inspiration: Aneerudh (Krrish) Joshi, GD', 'Contributors: Aneerudh (Krrish) Joshi', 'Thanks for playing!'];
-        canvas.ctx.fillStyle = '#ffffff';
-        canvas.ctx.font = '18px Arial';
-        canvas.ctx.textAlign = 'center';
-        credits.forEach((credit, i) => canvas.ctx.fillText(credit, Constants.SCREEN_WIDTH / 2, 150 + i * 40));
-        canvas.ctx.globalAlpha = 1;
-    }
+
 
     static drawSignInScreen(ctx, canvas) {
         const gradient = canvas.ctx.createLinearGradient(0, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);

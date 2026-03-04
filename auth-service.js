@@ -9,8 +9,17 @@ export class AuthService {
         onAuthStateChanged(auth, async (user) => {
             State.currentUser = user;
             if (user) {
+                // User is logged in, show title screen
+                State.showSignInScreen = false;
+                State.showTitleScreen = true;
+                State.isSignInForced = false;
                 const { LevelManager } = await import('./level-manager.js');
                 await LevelManager.loadLevelsFromStorage();
+            } else {
+                // User is not logged in, show sign-in screen
+                State.showTitleScreen = false;
+                State.showSignInScreen = true;
+                State.isSignInForced = true;
             }
         });
     }
@@ -23,6 +32,8 @@ export class AuthService {
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
             State.currentUser = result.user;
+            State.showSignInScreen = false;
+            State.showTitleScreen = true;
             const { LevelManager } = await import('./level-manager.js');
             await LevelManager.loadLevelsFromStorage();
             return result.user;
@@ -43,6 +54,8 @@ export class AuthService {
         try {
             const result = await signInWithEmailAndPassword(auth, email, password);
             State.currentUser = result.user;
+            State.showSignInScreen = false;
+            State.showTitleScreen = true;
             const { LevelManager } = await import('./level-manager.js');
             await LevelManager.loadLevelsFromStorage();
             return result.user;
@@ -61,6 +74,8 @@ export class AuthService {
         try {
             const result = await createUserWithEmailAndPassword(auth, email, password);
             State.currentUser = result.user;
+            State.showSignInScreen = false;
+            State.showTitleScreen = true;
             const { LevelManager } = await import('./level-manager.js');
             await LevelManager.loadLevelsFromStorage();
             return result.user;
@@ -82,6 +97,14 @@ export class AuthService {
             }
             await signOut(auth);
             State.currentUser = null;
+            State.showTitleScreen = false;
+            State.showSignInScreen = true;
+            State.isSignInForced = true;
+            State.showCustomizationScreen = false;
+            State.showCreditsScreen = false;
+            State.showLevelsScreen = false;
+            State.editorMode = false;
+            State.isRunning = false;
             const { LevelManager } = await import('./level-manager.js');
             await LevelManager.loadLevelsFromStorage();
         } catch (error) {

@@ -546,19 +546,21 @@ export class ScreenRenderer {
         
         // Credits content
         const credits = [
-            'Game Developer: Vihaan Krishnan',
-            'Title Screen Composer: Scott Joplin',
-            'Title Screen Performer: IE',
+            'Main Developer: Vihaan Krishnan',
+            'Title Screen Music Composer: Scott Joplin',
+            'Title Screen Music Performer: IE',
             'Engine: HTML5 Canvas',
             'First player: Tejas Deepak',
             'Inspiration: Aneerudh (Krrish) Joshi, GD',
-            'Contributors: Aneerudh (Krrish) Joshi',
+            'Contributors: Aneerudh (Krrish) Joshi and Vihaan Krishnan',
+            'Official levels: Saahith Chundi and Vihaan Krishnan',
+            'Upload icon: https://freesvg.org/upload-icon',
             'Thanks for playing!'
         ];
         ctx.fillStyle = '#ffffff';
         ctx.font = '18px Arial';
         credits.forEach((credit, i) => {
-            ctx.fillText(credit, Constants.SCREEN_WIDTH / 2, 150 + i * 40);
+            ctx.fillText(credit, Constants.SCREEN_WIDTH / 2, 100 + i * 40);
         });
         
         ctx.globalAlpha = 1;
@@ -572,7 +574,9 @@ export class ScreenRenderer {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);
         
-        this.drawBackArrow(ctx);
+        if (!State.isSignInForced) {
+            this.drawBackArrow(ctx);
+        }
         
         ctx.fillStyle = '#007bff';
         ctx.font = 'bold 32px Arial';
@@ -916,10 +920,16 @@ export class ScreenRenderer {
         ctx.font = '20px Arial';
         ctx.fillText(level.name || `Level ${levelIndex + 1}`, Constants.SCREEN_WIDTH / 2, boxY + boxSize + 40);
         
+        if (level.author) {
+            ctx.fillStyle = '#ffd700';
+            ctx.font = '14px Arial';
+            ctx.fillText(`by ${level.author}`, Constants.SCREEN_WIDTH / 2, boxY + boxSize + 60);
+        }
+        
         if (completed) {
             ctx.fillStyle = '#ffd700';
             ctx.font = '16px Arial';
-            ctx.fillText('✓ Completed', Constants.SCREEN_WIDTH / 2, boxY + boxSize + 65);
+            ctx.fillText('✓ Completed', Constants.SCREEN_WIDTH / 2, boxY + boxSize + (level.author ? 85 : 65));
         }
         
         ctx.fillStyle = '#ffffff';

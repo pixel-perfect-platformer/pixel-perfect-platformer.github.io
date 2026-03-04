@@ -98,7 +98,8 @@ export class LevelManager {
                     blocks: level.blocks || [],
                     texts: level.texts || [],
                     category: level.category || 'community',
-                    official: level.category === 'official'
+                    official: level.category === 'official',
+                    author: level.author || null
                 }));
                 this.populateLevelSelect();
                 this.loadLevel(0);

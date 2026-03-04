@@ -280,6 +280,39 @@ export class UIRenderer {
         ctx.textAlign = 'center';
         ctx.fillText('EDITOR', Constants.SCREEN_WIDTH / 2, 24);
         
+        // Publish button in top right (same style as back button)
+        const btnX = Constants.SCREEN_WIDTH - 70;
+        const btnY = 10;
+        const btnW = 60;
+        const btnH = 40;
+        const btnR = 6;
+        
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.45)';
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#19a819';
+        this.roundRectPath(ctx, btnX, btnY, btnW, btnH, btnR);
+        ctx.fill();
+        ctx.shadowColor = 'transparent';
+        
+        // Upload icon from SVG
+        const uploadIcon = new Image();
+        uploadIcon.src = './upload-icon.svg';
+        if (uploadIcon.complete) {
+            const iconSize = 24;
+            ctx.drawImage(uploadIcon, btnX + btnW/2 - iconSize/2, btnY + btnH/2 - iconSize/2, iconSize, iconSize);
+        } else {
+            // Fallback to text if image not loaded
+            ctx.fillStyle = '#e8ffe8';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('☁', btnX + 30, btnY + 22);
+            ctx.font = '16px Arial';
+            ctx.fillText('↑', btnX + 30, btnY + 34);
+        }
+        
+        ctx.restore();
+        
         // Tool buttons
         const tools = [
             { mode: 'build', y: 367, label: 'Build' },

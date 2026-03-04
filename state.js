@@ -3,7 +3,7 @@ class State {
     static blocks = [];
     static isRunning = false;
     static editorMode = false;
-    static showTitleScreen = true;
+    static showTitleScreen = false;
     static showCustomizationScreen = false;
     static pressedTitleButton = null;
     static titleButtonIsDown = false;
@@ -19,6 +19,10 @@ class State {
     static texts = []; // placed text objects {x,y,text}
     static levelCompleted = false;
     static showHitboxes = false;
+    // Input state
+    static leftPressed = false;
+    static rightPressed = false;
+    static jumpBuffered = false;
     // Level stats
     static levelStartTime = 0;
     static levelCompletionTime = 0;
@@ -75,7 +79,11 @@ class State {
     static animationStartTimeCredits = 0;
     static isAnimatingSignIn = false;
     static animationStartTimeSignIn = 0;
-    static showSignInScreen = false;
+    static showSignInScreen = true;
+    static isSignInForced = true; // True when user must sign in (no back button)
     static levelListPage = 0;
+    // Leaderboard and replay states
+    static showLeaderboardScreen = false;
+    static showReplayScreen = false;
 }
 export default State;
